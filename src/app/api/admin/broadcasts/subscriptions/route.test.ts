@@ -83,6 +83,8 @@ describe("POST (import)", () => {
     expect(lib.importSubscriptions).toHaveBeenCalledWith("a@b.co", "csv_import");
     await send("POST", { text: "a@b.co", source: "sendpulse_import" });
     expect(lib.importSubscriptions).toHaveBeenLastCalledWith("a@b.co", "sendpulse_import");
+    await send("POST", { text: "a@b.co", source: "smartsender_import" });
+    expect(lib.importSubscriptions).toHaveBeenLastCalledWith("a@b.co", "smartsender_import");
     expect(writeAudit).toHaveBeenCalledWith(
       {},
       expect.objectContaining({

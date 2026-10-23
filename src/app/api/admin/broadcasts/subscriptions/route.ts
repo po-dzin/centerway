@@ -22,7 +22,8 @@ import {
  * The list itself: who is on it, who left and why.
  *
  * GET   ?status=&q=&limit=&offset= — rows and the per-status counts
- * POST  { text, source }           — import pasted addresses (never resubscribes anyone)
+ * POST  { text, source }           — import pasted addresses (never resubscribes anyone); each
+ *                                    address ends on a person card with its base's tag
  * PATCH { address, action }        — `unsubscribe` by hand (support may: it is what a person
  *                                    asks support for), `resubscribe` an address that was
  *                                    unsubscribed by hand (admin only)
@@ -54,7 +55,8 @@ export async function POST(req: NextRequest) {
   const text = typeof body?.text === "string" ? body.text : "";
   if (!text.trim()) return badRequestResponse("text_required");
   if (text.length > 2_000_000) return badRequestResponse("text_too_large");
-  const source = body?.source === "sendpulse_import" ? "sendpulse_import" : "csv_import";
+  const source =
+    body?.source === "sendpulse_import" || body?.source === "smartsender_import" ? body.source : "csv_import";
   try {
     const result = await importSubscriptions(text, source);
     await writeAudit(serviceClient(), {

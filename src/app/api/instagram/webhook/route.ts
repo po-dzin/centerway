@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { secretsEqual } from "@/lib/auth/secretsEqual";
-import { handleComment } from "@/lib/autoreply/engine";
-import { instagramSenderFromEnv, parseCommentEvents, verifySignature } from "@/lib/autoreply/instagram";
+import { handleComment, handlePostback } from "@/lib/autoreply/engine";
+import {
+  instagramSenderFromEnv,
+  parseCommentEvents,
+  parsePostbackEvents,
+  verifySignature,
+} from "@/lib/autoreply/instagram";
 import { dbStore } from "@/lib/autoreply/store";
 import { log } from "@/lib/logger";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 export const runtime = "nodejs";
 
-function appSecret(): string | null {
-  return process.env.META_APP_SECRET?.trim() || process.env.INSTAGRAM_APP_SECRET?.trim() || null;
+/**
+ * Both app secrets are tried: Instagram signs its webhooks with the secret of
+ * the Instagram app (the one under «Instagram API setup»), which is not the
+ * parent Meta app's secret when the two differ.
+ */
+function appSecrets(): string[] {
+  return [process.env.INSTAGRAM_APP_SECRET, process.env.META_APP_SECRET]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
 }
 
 /**
@@ -40,14 +52,16 @@ export async function GET(req: NextRequest) {
  * claimed by its id before anything is sent.
  */
 export async function POST(req: NextRequest) {
-  const secret = appSecret();
-  if (!secret) {
+  const secrets = appSecrets();
+  if (secrets.length === 0) {
     log.error("instagram.webhook_secret_missing", {});
     return NextResponse.json({ error: "not_configured" }, { status: 503 });
   }
 
   const body = await req.text();
-  if (!verifySignature(secret, body, req.headers.get("x-hub-signature-256"))) {
+  const signature = req.headers.get("x-hub-signature-256");
+  if (!secrets.some((secret) => verifySignature(secret, body, signature))) {
+    log.warn("instagram.webhook_signature_invalid", { signed: Boolean(signature), secrets: secrets.length });
     return NextResponse.json({ error: "signature_invalid" }, { status: 401 });
   }
 
@@ -59,12 +73,18 @@ export async function POST(req: NextRequest) {
   }
 
   const events = parseCommentEvents(payload);
-  if (events.length === 0) return NextResponse.json({ ok: true, handled: 0 });
+  const taps = parsePostbackEvents(payload);
+  log.info("instagram.webhook_received", { comments: events.length, taps: taps.length });
+  if (events.length === 0 && taps.length === 0) return NextResponse.json({ ok: true, handled: 0 });
 
   const store = dbStore();
   const sender = instagramSenderFromEnv();
   const results: string[] = [];
   try {
+    for (const tap of taps) {
+      const result = await handlePostback(tap, { store, sender, siteOrigin: PLATFORM_ORIGIN });
+      results.push(`postback_${result.outcome}`);
+    }
     for (const event of events) {
       const result = await handleComment(event, { store, sender, siteOrigin: PLATFORM_ORIGIN });
       results.push(result.outcome);
@@ -73,5 +93,6 @@ export async function POST(req: NextRequest) {
     log.error("instagram.webhook_failed", { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "handle_failed" }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, handled: events.length, results });
+  log.info("instagram.webhook_handled", { results });
+  return NextResponse.json({ ok: true, handled: events.length + taps.length, results });
 }

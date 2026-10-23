@@ -16,8 +16,17 @@
 
 import { log } from "@/lib/logger";
 
+import { buildLink, DEFAULT_LINK_LABEL, DEFAULT_OPEN_LABEL } from "./link";
 import { pickVariant, matchesKeyword } from "./match";
-import { REPLY_WINDOW_SECONDS, type CommentEvent, type InstagramSender } from "./instagram";
+
+export { buildLink };
+import {
+  REPLY_WINDOW_SECONDS,
+  type CommentEvent,
+  type InstagramSender,
+  type MessageButton,
+  type PostbackEvent,
+} from "./instagram";
 
 export type AutoreplyRule = {
   id: string;
@@ -29,6 +38,9 @@ export type AutoreplyRule = {
   buttonLabel: string | null;
   buttonUrl: string | null;
   utmCampaign: string | null;
+  /** Two-step message: the greeting carries a button with this label (default below), the tap brings `followUpText` with the link. */
+  openButtonLabel: string | null;
+  followUpText: string | null;
   enabled: boolean;
   maxPerHour: number;
 };
@@ -44,6 +56,12 @@ export interface AutoreplyStore {
   /** Claims (pending or sent) of the rule since the time, counting the caller's own. */
   countClaimsSince(ruleId: string, sinceIso: string): Promise<number>;
   finish(eventId: string, status: EventStatus, error?: string): Promise<void>;
+  /**
+   * Puts the person who got the reply on their card: Instagram id and nick, the
+   * rule as their first touch, the `ig-autodm` tag. Optional so a store
+   * without the person card (tests, an older database) still replies.
+   */
+  rememberPerson?(rule: AutoreplyRule, event: CommentEvent): Promise<void>;
 }
 
 export type HandleResult =
@@ -57,17 +75,7 @@ export type HandleDeps = {
   random?: () => number;
 };
 
-const SLUG = /[^a-z0-9]+/g;
-
-/** The button link with the Instagram tags every auto-reply carries, absolute. */
-export function buildLink(url: string, rule: Pick<AutoreplyRule, "name" | "utmCampaign">, siteOrigin: string): string {
-  const link = new URL(url, siteOrigin);
-  const campaign = (rule.utmCampaign || rule.name).toLowerCase().replace(SLUG, "-").replace(/^-|-$/g, "");
-  link.searchParams.set("utm_source", "instagram");
-  link.searchParams.set("utm_medium", "autodm");
-  if (campaign) link.searchParams.set("utm_campaign", campaign);
-  return link.toString();
-}
+const POSTBACK_PREFIX = "ar:";
 
 /** The direct message: the chosen text, then the link on its own lines. */
 export function composeDirectMessage(text: string, rule: AutoreplyRule, siteOrigin: string): string {
@@ -82,11 +90,14 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
   const random = deps.random ?? Math.random;
 
   const rules = await store.listEnabledRules();
-  const rule = rules.find(
-    (candidate) =>
-      (candidate.mediaId === null || candidate.mediaId === event.mediaId) &&
-      matchesKeyword(event.text, candidate.keywords),
-  );
+  let rule: AutoreplyRule | undefined;
+  for (const candidate of rules) {
+    if (!matchesKeyword(event.text, candidate.keywords)) continue;
+    if (await watchesPost(candidate, event, sender)) {
+      rule = candidate;
+      break;
+    }
+  }
   if (!rule) return { outcome: "no_rule" };
 
   const eventId = await store.claimComment(rule.id, event);
@@ -107,7 +118,16 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
   if (!text) return stop("failed", "no_dm_text");
 
   try {
-    await sender.sendPrivateReply(event.commentId, composeDirectMessage(text, rule, siteOrigin));
+    if (rule.followUpText && rule.buttonUrl) {
+      const button: MessageButton = {
+        kind: "postback",
+        title: rule.openButtonLabel || DEFAULT_OPEN_LABEL,
+        payload: `${POSTBACK_PREFIX}${rule.id}`,
+      };
+      await sender.sendPrivateReply(event.commentId, text, button);
+    } else {
+      await sender.sendPrivateReply(event.commentId, composeDirectMessage(text, rule, siteOrigin));
+    }
   } catch (error) {
     return stop("failed", error instanceof Error ? error.message.slice(0, 300) : "send_failed");
   }
@@ -125,5 +145,61 @@ export async function handleComment(event: CommentEvent, deps: HandleDeps): Prom
       });
     }
   }
+  // Also a courtesy to us, not to the person: the reply is out either way.
+  if (event.fromId && store.rememberPerson) {
+    try {
+      await store.rememberPerson(rule, event);
+    } catch (error) {
+      log.warn("autoreply.remember_person_failed", {
+        ruleId: rule.id,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
   return stop("sent");
+}
+
+/**
+ * True when the rule watches the post this comment is under. A rule given a
+ * post link stores the link's short code, which is compared with the post's own
+ * (one Graph call per comment; a failed call means "not this post").
+ */
+async function watchesPost(rule: AutoreplyRule, event: CommentEvent, sender: InstagramSender | null): Promise<boolean> {
+  if (rule.mediaId === null || rule.mediaId === event.mediaId) return true;
+  if (!sender || !event.mediaId || /^\d+$/.test(rule.mediaId)) return false;
+  try {
+    return (await sender.shortcodeOf(event.mediaId)) === rule.mediaId;
+  } catch (error) {
+    log.warn("autoreply.shortcode_failed", { message: error instanceof Error ? error.message : String(error) });
+    return false;
+  }
+}
+
+/**
+ * The second step: the person tapped the greeting's button, so the link goes to
+ * them (inside Instagram's 24-hour window for a person who just wrote to us).
+ */
+export async function handlePostback(
+  event: PostbackEvent,
+  deps: Pick<HandleDeps, "store" | "sender" | "siteOrigin">,
+): Promise<{ outcome: "ignored" | "sent" | "failed" }> {
+  if (!event.payload.startsWith(POSTBACK_PREFIX)) return { outcome: "ignored" };
+  const ruleId = event.payload.slice(POSTBACK_PREFIX.length);
+  const rules = await deps.store.listEnabledRules();
+  const rule = rules.find((candidate) => candidate.id === ruleId);
+  if (!rule || !rule.followUpText || !rule.buttonUrl || !deps.sender) return { outcome: "ignored" };
+  try {
+    await deps.sender.sendDirect(event.senderId, rule.followUpText, {
+      kind: "link",
+      title: rule.buttonLabel || DEFAULT_LINK_LABEL,
+      url: buildLink(rule.buttonUrl, rule, deps.siteOrigin),
+    });
+  } catch (error) {
+    log.warn("autoreply.follow_up_failed", {
+      ruleId: rule.id,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return { outcome: "failed" };
+  }
+  return { outcome: "sent" };
 }

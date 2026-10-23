@@ -50,7 +50,9 @@ export function SubscriptionsPanel() {
   const [counts, setCounts] = useState<SubscriptionCounts>({});
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
-  const [importSendpulse, setImportSendpulse] = useState(true);
+  const [importSource, setImportSource] = useState<"csv_import" | "smartsender_import" | "sendpulse_import">(
+    "csv_import",
+  );
   const [busy, setBusy] = useState(false);
   // Import and resubscribe are the owner's; support sees the list and may unsubscribe.
   const [canEdit, setCanEdit] = useState(false);
@@ -116,7 +118,7 @@ export function SubscriptionsPanel() {
         "/api/admin/broadcasts/subscriptions",
         {
           method: "POST",
-          body: JSON.stringify({ text: importText, source: importSendpulse ? "sendpulse_import" : "csv_import" }),
+          body: JSON.stringify({ text: importText, source: importSource }),
         },
       );
       toast.success(
@@ -264,9 +266,17 @@ export function SubscriptionsPanel() {
               onChange={(e) => setImportText(e.target.value)}
               rows={12}
             />
-            <label className={controls.fieldCaption}>
-              <input type="checkbox" checked={importSendpulse} onChange={(e) => setImportSendpulse(e.target.checked)} />{" "}
-              {t("bc_import_source_sendpulse")}
+            <label className={controls.formStack}>
+              <span className={controls.fieldCaption}>{t("bc_import_source")}</span>
+              <select
+                className={controls.select}
+                value={importSource}
+                onChange={(e) => setImportSource(e.target.value as typeof importSource)}
+              >
+                <option value="csv_import">{t("bc_import_source_csv")}</option>
+                <option value="smartsender_import">{t("bc_import_source_smartsender")}</option>
+                <option value="sendpulse_import">{t("bc_import_source_sendpulse")}</option>
+              </select>
             </label>
           </div>
         </AdminModal>

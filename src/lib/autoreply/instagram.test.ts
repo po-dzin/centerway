@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseCommentEvents, signBody, verifySignature } from "./instagram";
+import { parseCommentEvents, parsePostbackEvents, signBody, verifySignature } from "./instagram";
 
 const comment = (over: Record<string, unknown> = {}) => ({
   object: "instagram",
@@ -52,5 +52,22 @@ describe("parseCommentEvents", () => {
       parseCommentEvents({ object: "instagram", entry: [{ changes: [{ field: "mentions", value: {} }] }] }),
     ).toEqual([]);
     expect(parseCommentEvents(comment({ text: 5 }))).toEqual([]);
+  });
+});
+
+describe("parsePostbackEvents", () => {
+  const tap = (over: Record<string, unknown> = {}) => ({
+    object: "instagram",
+    entry: [{ id: "ACCOUNT", messaging: [{ sender: { id: "U1" }, postback: { payload: "ar:r1" }, ...over }] }],
+  });
+
+  it("reads who tapped and what", () => {
+    expect(parsePostbackEvents(tap())).toEqual([{ senderId: "U1", payload: "ar:r1" }]);
+  });
+
+  it("skips our own echoes and malformed bodies", () => {
+    expect(parsePostbackEvents(tap({ sender: { id: "ACCOUNT" } }))).toEqual([]);
+    expect(parsePostbackEvents(tap({ postback: {} }))).toEqual([]);
+    expect(parsePostbackEvents(null)).toEqual([]);
   });
 });

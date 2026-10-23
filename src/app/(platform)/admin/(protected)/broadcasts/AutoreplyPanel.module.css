@@ -1,0 +1,405 @@
+/*
+ * AUTOREPLY EDITOR: numbered steps on the left, what the person sees on the
+ * right. Material comes from the global layer and the shared admin plates;
+ * only the arrangements this screen alone has are declared here.
+ */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.headTitle {
+  composes: cw-text from global;
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-hero-subtitle-size);
+  font-weight: 600;
+  line-height: var(--ds-type-hero-subtitle-line-height);
+}
+
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  margin-inline-start: auto;
+}
+
+.editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .editor {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  }
+
+  .side {
+    position: sticky;
+    top: var(--cw-space-md);
+  }
+}
+
+.column,
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.sectionTitle {
+  composes: cw-text from global;
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-hero-subtitle-size);
+  font-weight: 600;
+  line-height: var(--ds-type-hero-subtitle-line-height);
+}
+
+.label {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.chip {
+  background-color: var(--cw-accent);
+  color: var(--cw-accent-contrast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  padding-block: 0;
+  padding-inline: var(--cw-space-sm) 0;
+  border-radius: var(--cw-radius-pill);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+}
+
+.chipRemove {
+  composes: cw-icon-btn from global;
+  color: inherit;
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--ds-touch-target-min);
+  min-height: var(--ds-touch-target-min);
+  padding: 0;
+}
+
+.chipInput {
+  flex: 1 1 10rem;
+  min-width: 8rem;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-touch-target-min);
+  cursor: pointer;
+}
+
+.toggleText {
+  composes: cw-text from global;
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 1.5rem;
+  margin: 0;
+  appearance: none;
+  border-radius: var(--cw-radius-pill);
+  cursor: pointer;
+  composes: cw-surface-2 cw-border from global;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 0.1875rem;
+  inset-inline-start: 0.1875rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  transition: transform var(--cw-motion-state) var(--cw-ease-state);
+}
+
+.switch.switch:checked {
+  border-color: transparent;
+  background-color: var(--cw-accent);
+}
+
+.switch:checked::after {
+  transform: translateX(1rem);
+  background: var(--cw-accent-contrast);
+  opacity: 1;
+}
+
+.switch:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.variant {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-xs);
+}
+
+.variantNumber {
+  composes: cw-surface-2 cw-muted from global;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: var(--cw-space-xs);
+  border-radius: 50%;
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+}
+
+.variantField {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.note {
+  composes: cw-muted from global;
+  margin: 0;
+  font-size: var(--ds-type-label-size);
+}
+
+.phone {
+  composes: cw-surface-2 from global;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-lg);
+}
+
+.bubbleMe {
+  background-color: var(--cw-accent);
+  color: var(--cw-accent-contrast);
+  align-self: flex-end;
+  max-width: 80%;
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-lg);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.bubble {
+  composes: cw-surface cw-border from global;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+  max-width: 90%;
+  padding: var(--cw-space-sm);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-lg);
+  font-size: var(--ds-type-body-sm-size);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bubbleButton {
+  composes: cw-surface-2 cw-border from global;
+  padding: var(--cw-space-xs);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-md);
+  font-weight: 600;
+  text-align: center;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-xs);
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: minmax(5rem, 8rem) minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.barTrack {
+  composes: cw-surface-2 from global;
+  height: var(--cw-space-xs);
+  overflow: hidden;
+  border-radius: var(--cw-radius-pill);
+}
+
+.barFill {
+  background-color: var(--cw-accent);
+  height: 100%;
+}
+
+.barValue {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: end;
+}
+
+/* ── The list: totals, then one row per rule ─────────────────────────── */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 768px) {
+  .tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.tile {
+  composes: cw-surface cw-border from global;
+  display: flex;
+  flex-direction: column;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-lg);
+}
+
+.tileValue {
+  composes: cw-text from global;
+  font-size: var(--ds-type-display-size);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--ds-type-display-line-height);
+}
+
+.tileLabel {
+  composes: cw-muted from global;
+  font-size: var(--ds-type-label-size);
+}
+
+.listHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.listTitle {
+  composes: cw-text from global;
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-hero-subtitle-size);
+  font-weight: 600;
+  line-height: var(--ds-type-hero-subtitle-line-height);
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+}
+
+.rule {
+  composes: cw-surface cw-border from global;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--cw-radius-lg);
+}
+
+@media (min-width: 900px) {
+  .rule {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 1.2fr) auto;
+  }
+}
+
+.ruleMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ruleName {
+  composes: cw-text from global;
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.tag {
+  composes: cw-surface-2 from global;
+  padding: 0 var(--cw-space-xs);
+  border-radius: var(--cw-radius-md);
+  font-size: var(--ds-type-label-size);
+  font-weight: 600;
+}
+
+.ruleState {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--cw-space-2xs);
+}
+
+.finalLink {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.required {
+  color: var(--cw-accent-strong);
+  font-weight: 700;
+}

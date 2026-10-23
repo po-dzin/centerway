@@ -71,6 +71,16 @@ async function priceableThings(): Promise<PriceableThing[]> {
   });
 }
 
+/**
+ * A standalone thing that may be sold by hand («Додати продаж», G 23.10):
+ * the same set this screen prices, so a course never sneaks in through the
+ * product door and opens access nobody granted. `null` when it is not one.
+ */
+export async function sellableProduct(code: string): Promise<{ id: string; code: string; title: string } | null> {
+  const known = (await priceableThings()).find((thing) => thing.code === code);
+  return known ? { id: known.id, code: known.code, title: known.title } : null;
+}
+
 async function priceableThing(code: string): Promise<PriceableThing> {
   const known = (await priceableThings()).find((thing) => thing.code === code);
   if (!known) throw new AccessError("product_unknown", 404);

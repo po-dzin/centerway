@@ -38,9 +38,27 @@ describe("rulePatch", () => {
 });
 
 describe("assertCanEnable", () => {
+  const row = { keywords: ["a"], dm_texts: ["a"], button_url: null, follow_up_text: null };
+
   it("needs a word and a message", () => {
-    expect(() => assertCanEnable({ keywords: [], dm_texts: ["a"] })).toThrow(AutoreplyError);
-    expect(() => assertCanEnable({ keywords: ["a"], dm_texts: [] })).toThrow(AutoreplyError);
-    expect(() => assertCanEnable({ keywords: ["a"], dm_texts: ["a"] })).not.toThrow();
+    expect(() => assertCanEnable({ ...row, keywords: [] })).toThrow(AutoreplyError);
+    expect(() => assertCanEnable({ ...row, dm_texts: [] })).toThrow(AutoreplyError);
+    expect(() => assertCanEnable(row)).not.toThrow();
+  });
+
+  it("needs a link when the second message carries one", () => {
+    expect(() => assertCanEnable({ ...row, follow_up_text: "Ось" })).toThrow(AutoreplyError);
+    expect(() => assertCanEnable({ ...row, follow_up_text: "Ось", button_url: "/t" })).not.toThrow();
+  });
+});
+
+describe("the watched post", () => {
+  it("takes the short code from a post link and keeps a numeric id", () => {
+    expect(rulePatch({ mediaId: "https://www.instagram.com/p/DTS16RkCGXe/" })).toEqual({ media_id: "DTS16RkCGXe" });
+    expect(rulePatch({ mediaId: "https://www.instagram.com/evgeniy/reel/ABC_d-1/?igsh=x" })).toEqual({
+      media_id: "ABC_d-1",
+    });
+    expect(rulePatch({ mediaId: "17841403794945854" })).toEqual({ media_id: "17841403794945854" });
+    expect(rulePatch({ mediaId: " " })).toEqual({ media_id: null });
   });
 });

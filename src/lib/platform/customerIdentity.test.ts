@@ -7,9 +7,17 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { normalizeCustomerEmail, normalizeCustomerPhone, upsertCustomerByContact } from "./customerIdentity";
+import {
+  normalizeCustomerEmail,
+  normalizeCustomerPhone,
+  normalizePhoneE164,
+  upsertCustomerByContact,
+} from "./customerIdentity";
 
 type Row = { id: string; email: string | null; phone: string | null; created_at: string };
+/** `phone_e164` is computed by the database from `phone`; the fake computes it the same way. */
+type Column = keyof Row | "phone_e164";
+const valueOf = (row: Row, column: Column) => (column === "phone_e164" ? normalizePhoneE164(row.phone) : row[column]);
 
 /**
  * The chain this fake answers, named rather than left as `any`: exactly the
@@ -18,13 +26,13 @@ type Row = { id: string; email: string | null; phone: string | null; created_at:
  * instead of a silently empty result.
  */
 type CustomersBuilder = {
-  _filters: Array<[keyof Row, unknown]>;
+  _filters: Array<[Column, unknown]>;
   /** The pending `.update()` patch; its presence is what makes this a write. */
   _patch?: Record<string, unknown>;
   /** The pending `.insert()` row, likewise. */
   _insert?: { email: string | null; phone: string | null };
   select(columns: string): CustomersBuilder;
-  eq(column: keyof Row, value: unknown): CustomersBuilder;
+  eq(column: Column, value: unknown): CustomersBuilder;
   order(column: string, options?: { ascending?: boolean }): CustomersBuilder;
   limit(count: number): CustomersBuilder;
   update(patch: Record<string, unknown>): CustomersBuilder;
@@ -45,7 +53,7 @@ function fakeDb(rows: Row[], opts: { insertError?: { code?: string } } = {}) {
         select() {
           return builder;
         },
-        eq(column: keyof Row, value: unknown) {
+        eq(column: Column, value: unknown) {
           builder._filters.push([column, value]);
           return builder;
         },
@@ -87,7 +95,7 @@ function fakeDb(rows: Row[], opts: { insertError?: { code?: string } } = {}) {
           }
           let found = rows;
           for (const [column, value] of builder._filters) {
-            found = found.filter((row) => row[column] === value);
+            found = found.filter((row) => valueOf(row, column) === value);
           }
           found = [...found].sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(0, 1);
           return resolve({ data: found, error: null });
@@ -117,7 +125,50 @@ describe("normalisation", () => {
   });
 });
 
+describe("normalizePhoneE164", () => {
+  it("brings the shapes Ukrainians type to one +380 number", () => {
+    // The same person typed two ways used to be two customers.
+    for (const typed of [
+      "+380671234567",
+      "380671234567",
+      "0671234567",
+      "067 123 45 67",
+      "(067) 123-45-67",
+      "80671234567",
+      "671234567",
+    ]) {
+      expect(normalizePhoneE164(typed)).toBe("+380671234567");
+    }
+  });
+
+  it("keeps a foreign number with its own country code and drops what is not a phone", () => {
+    expect(normalizePhoneE164("+48 512 345 678")).toBe("+48512345678");
+    expect(normalizePhoneE164("12345")).toBeNull();
+    expect(normalizePhoneE164("")).toBeNull();
+    expect(normalizePhoneE164(null)).toBeNull();
+  });
+});
+
 describe("upsertCustomerByContact", () => {
+  it("finds the same person whose phone was stored in another shape", async () => {
+    const db = fakeDb([{ id: "c1", email: null, phone: "067 123 45 67", created_at: "2026-01-01T00:00:00Z" }]);
+    const result = await upsertCustomerByContact(db as never, { phone: "+380671234567" });
+    expect(result).toEqual({ id: "c1", created: false });
+    expect(db.inserts).toBe(0);
+  });
+
+  it("lands on the row that carries this exact spelling when the number lives twice", async () => {
+    // Rows split before phone matching: writing this email and phone onto the
+    // older row would collide with the newer one's unique email and phone.
+    const db = fakeDb([
+      { id: "old", email: null, phone: "067 123 45 67", created_at: "2025-01-01T00:00:00Z" },
+      { id: "new", email: "ann@example.com", phone: "+380671234567", created_at: "2026-01-01T00:00:00Z" },
+    ]);
+    const result = await upsertCustomerByContact(db as never, { email: "ann@example.com", phone: "+380671234567" });
+    expect(result).toEqual({ id: "new", created: false });
+    expect(db.rows[0]!.email).toBeNull();
+  });
+
   it("returns nothing to key on when both contacts are empty", async () => {
     const db = fakeDb([]);
     expect(await upsertCustomerByContact(db as never, { email: "  ", phone: null })).toEqual({
