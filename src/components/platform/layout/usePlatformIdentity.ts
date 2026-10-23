@@ -19,11 +19,13 @@ export type PlatformIdentity = {
   /** From `user_roles`, or null while unresolved or on a failed read. */
   role: string | null;
   authorsCourses: boolean;
+  /** The account's face as the server has it, or null (the session's then stands). */
+  face: string | null;
 };
 
-const UNRESOLVED: PlatformIdentity = { role: null, authorsCourses: false };
+const UNRESOLVED: PlatformIdentity = { role: null, authorsCourses: false, face: null };
 
-type Cached = { role?: string; authorsCourses?: boolean; tokenTail?: string; at?: number };
+type Cached = { role?: string; authorsCourses?: boolean; face?: string | null; tokenTail?: string; at?: number };
 
 function readCache(accessToken: string): PlatformIdentity | null {
   try {
@@ -35,6 +37,7 @@ function readCache(accessToken: string): PlatformIdentity | null {
     return {
       role: typeof cached.role === "string" ? cached.role : null,
       authorsCourses: cached.authorsCourses === true,
+      face: typeof cached.face === "string" ? cached.face : null,
     };
   } catch {
     return null;
@@ -48,6 +51,7 @@ function writeCache(accessToken: string, identity: PlatformIdentity) {
       JSON.stringify({
         role: identity.role,
         authorsCourses: identity.authorsCourses,
+        face: identity.face,
         tokenTail: accessToken.slice(-16),
         at: Date.now(),
       }),
@@ -79,10 +83,12 @@ function bootstrapIdentity(token: string): Promise<PlatformIdentity | null> {
       const payload = (await res.json().catch(() => ({}))) as {
         role?: string;
         authorsCourses?: boolean;
+        face?: string | null;
       };
       return {
         role: typeof payload.role === "string" ? payload.role : null,
         authorsCourses: payload.authorsCourses === true,
+        face: typeof payload.face === "string" ? payload.face : null,
       };
     } catch {
       // Offline or transient: leave it unresolved rather than guessing.

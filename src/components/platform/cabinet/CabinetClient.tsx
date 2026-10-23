@@ -37,6 +37,8 @@ import { getFaceCopy } from "./faceCopy";
 import { useAccountFace } from "./useAccountFace";
 import { useToast } from "@/components/ToastProvider";
 import { SphereMapCard } from "./SphereMapCard";
+import { publishOwnFace } from "@/components/platform/ownFace";
+import { providerAvatarAtSize } from "@/lib/auth/accountIdentity";
 import { ProfileTabs } from "./ProfileTabs";
 import dynamic from "next/dynamic";
 
@@ -181,6 +183,13 @@ export function CabinetClient() {
    */
   const shelfLoading = !shelfFailed && shelf === null;
 
+  /* The profile reads the account fresh; the top bar reads the session token,
+     which can be older. Hand the bar the fresh face (G 23.10). */
+  const loadedFace = profile?.profile.account.avatarUrl;
+  useEffect(() => {
+    if (loadedFace !== undefined) publishOwnFace(loadedFace ?? null);
+  }, [loadedFace]);
+
   const gate = cabinetGate({
     lang,
     loading: sessionLoading || profileLoading,
@@ -210,7 +219,13 @@ export function CabinetClient() {
            account follows it (see the avatar route); the fold's draft takes
            the saved row so a later save cannot put the old portrait back. */
         face={{
-          photo: account.avatarUrl ? { src: account.avatarUrl, alt: account.fullName ?? copy.fallbackName } : null,
+          photo: account.avatarUrl
+            ? {
+                // Full size for the viewer: Google's own address defaults to 96px.
+                src: providerAvatarAtSize(account.avatarUrl, 1024) ?? account.avatarUrl,
+                alt: account.fullName ?? copy.fallbackName,
+              }
+            : null,
           settingsHref: authorProfile.eligible ? "#author" : null,
           uploading: face.uploading,
           copy: faceCopy,
@@ -221,6 +236,7 @@ export function CabinetClient() {
               return false;
             }
             setAvatar(result.src);
+            publishOwnFace(result.src, true);
             if (result.author) authorProfile.adopt(result.author);
             toast.success(result.author ? faceCopy.doneAuthor : faceCopy.doneLearner);
             return true;
@@ -235,7 +251,11 @@ export function CabinetClient() {
           account.avatarUrl ? (
             // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
+            <img
+              src={providerAvatarAtSize(account.avatarUrl, 256) ?? account.avatarUrl}
+              alt=""
+              referrerPolicy="no-referrer"
+            />
           ) : (
             getUserInitial(session, account.fullName)
           )

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { adminClient } from "@/lib/auth/adminClient";
+import { accountAvatar } from "@/lib/auth/accountIdentity";
 
-async function resolveUserId(req: NextRequest): Promise<string | null> {
+async function resolveUser(
+  req: NextRequest,
+): Promise<{ id: string; meta: Record<string, unknown> | undefined } | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.slice("Bearer ".length);
@@ -15,13 +18,16 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser(token);
-  return user?.id ?? null;
+  return user ? { id: user.id, meta: user.user_metadata } : null;
 }
 
 export async function POST(req: NextRequest) {
   let userId: string | null = null;
+  let userMeta: Record<string, unknown> | undefined;
   try {
-    userId = await resolveUserId(req);
+    const user = await resolveUser(req);
+    userId = user?.id ?? null;
+    userMeta = user?.meta;
   } catch {
     return NextResponse.json({ error: "Auth provider unavailable" }, { status: 503 });
   }
@@ -60,5 +66,8 @@ export async function POST(req: NextRequest) {
     role: typeof data?.role === "string" ? data.role : "user",
     authorsCourses:
       (Array.isArray(authored) && authored.length > 0) || (Array.isArray(authorProfile) && authorProfile.length > 0),
+    /* The account's face as the server has it now (G 23.10): the header's
+       session token can be older than the last change of photo. */
+    face: accountAvatar(userMeta),
   });
 }
