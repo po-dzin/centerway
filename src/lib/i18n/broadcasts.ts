@@ -214,6 +214,11 @@ export const broadcasts = {
   ar_tag_all_posts: { uk: "усі дописи", en: "all posts" },
   ar_rule_stats: { uk: "{s} з {c}", en: "{s} of {c}" },
   ar_final_link: { uk: "Підсумкове посилання", en: "Final link" },
+  ar_missing: { uk: "Заповніть обов’язкові поля", en: "Fill in the required fields" },
+  ar_required_hint: {
+    uk: "* — обов’язкові поля. Кнопка привітання, друге повідомлення й посилання потрібні лише разом; без них піде одне повідомлення з посиланням текстом.",
+    en: "* marks required fields. The greeting button, the second message and the link go together; without them one message with the link as text is sent.",
+  },
   ar_s_when: { uk: "1. Коли спрацьовує", en: "1. When it fires" },
   ar_s_public: { uk: "2. Публічна відповідь під коментарем", en: "2. Public reply under the comment" },
   ar_s_dm: { uk: "3. Повідомлення в особисті", en: "3. Direct message" },

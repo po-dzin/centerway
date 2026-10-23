@@ -397,3 +397,8 @@
   overflow-wrap: anywhere;
   font-weight: 600;
 }
+
+.required {
+  color: var(--cw-accent-strong);
+  font-weight: 700;
+}

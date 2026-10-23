@@ -310,6 +310,14 @@ function Variants({
   );
 }
 
+function Req() {
+  return (
+    <span className={styles.required} aria-hidden="true">
+      *
+    </span>
+  );
+}
+
 function Switch({
   label,
   checked,
@@ -425,6 +433,17 @@ function RuleEditor({
   }, [rule.id]);
 
   const save = async () => {
+    const missing: string[] = [];
+    if (!draft.name.trim()) missing.push(t("ar_f_name"));
+    if (draft.keywords.length === 0) missing.push(t("ar_f_keywords"));
+    if (!draft.dmTexts.some((text) => text.trim() !== "")) missing.push(t("ar_f_dm"));
+    if (draft.openButtonLabel.trim() && !draft.followUpText.trim()) missing.push(t("ar_f_follow_up"));
+    if (draft.followUpText.trim() && !draft.openButtonLabel.trim()) missing.push(t("ar_f_open_label"));
+    if (draft.followUpText.trim() && !draft.buttonUrl.trim()) missing.push(t("ar_s_button"));
+    if (missing.length > 0) {
+      toast.error(`${t("ar_missing")}: ${missing.join(", ")}`);
+      return;
+    }
     setBusy(true);
     try {
       await authorizedJson(`/api/admin/autoreply/${rule.id}`, {
@@ -516,7 +535,9 @@ function RuleEditor({
           <section className={`${surfaces.plate} ${styles.section}`}>
             <h4 className={styles.sectionTitle}>{t("ar_s_when")}</h4>
             <label className={styles.group}>
-              <span className={styles.label}>{t("ar_f_name")}</span>
+              <span className={styles.label}>
+                {t("ar_f_name")} <Req />
+              </span>
               <input
                 className={controls.input}
                 value={draft.name}
@@ -534,7 +555,9 @@ function RuleEditor({
               />
             </label>
             <div className={styles.group}>
-              <span className={styles.label}>{t("ar_f_keywords")}</span>
+              <span className={styles.label}>
+                {t("ar_f_keywords")} <Req />
+              </span>
               <Keywords values={draft.keywords} disabled={!canEdit} onChange={(next) => set({ keywords: next })} />
             </div>
           </section>
@@ -565,8 +588,11 @@ function RuleEditor({
 
           <section className={`${surfaces.plate} ${styles.section}`}>
             <h4 className={styles.sectionTitle}>{t("ar_s_dm")}</h4>
+            <p className={styles.note}>{t("ar_required_hint")}</p>
             <div className={styles.group}>
-              <span className={styles.label}>{t("ar_f_dm")}</span>
+              <span className={styles.label}>
+                {t("ar_f_dm")} <Req />
+              </span>
               <Variants
                 label={t("ar_variant")}
                 values={draft.dmTexts}
@@ -575,7 +601,9 @@ function RuleEditor({
               />
             </div>
             <div className={styles.group}>
-              <span className={styles.label}>{t("ar_f_open_label")}</span>
+              <span className={styles.label}>
+                {t("ar_f_open_label")} {twoStep || draft.openButtonLabel.trim() ? <Req /> : null}
+              </span>
               <input
                 className={controls.input}
                 value={draft.openButtonLabel}
@@ -585,7 +613,9 @@ function RuleEditor({
               />
             </div>
             <div className={styles.group}>
-              <span className={styles.label}>{t("ar_f_follow_up")}</span>
+              <span className={styles.label}>
+                {t("ar_f_follow_up")} {draft.openButtonLabel.trim() ? <Req /> : null}
+              </span>
               <textarea
                 className={controls.textareaShort}
                 value={draft.followUpText}
@@ -595,7 +625,9 @@ function RuleEditor({
               <p className={styles.note}>{t("ar_f_two_step_hint")}</p>
             </div>
             <div className={styles.group}>
-              <span className={styles.label}>{t("ar_s_button")}</span>
+              <span className={styles.label}>
+                {t("ar_s_button")} {twoStep ? <Req /> : null}
+              </span>
               <div className={controls.fieldsTwo}>
                 <input
                   className={controls.input}
