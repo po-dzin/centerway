@@ -12,6 +12,9 @@
   position: fixed;
   inset: 0;
   display: grid;
+  /* One track that can shrink below the photo's own size, so a tall portrait
+     is fitted by object-fit instead of stretching the row past the screen. */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   box-sizing: border-box;
   inline-size: 100%;
@@ -36,6 +39,8 @@
   display: block;
   max-inline-size: 100%;
   max-block-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 0;
   inline-size: auto;
   block-size: auto;
   object-fit: contain;
