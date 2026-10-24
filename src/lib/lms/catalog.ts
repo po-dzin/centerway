@@ -49,11 +49,6 @@ export function snapshotCourses(): Course[] {
   return courses;
 }
 
-/** Snapshot courses a learner may reach: drafts stay invisible outside admin tooling. */
-export function listPublishedSnapshotCourses(): Course[] {
-  return courses.filter((course) => course.status === "published");
-}
-
 export function getSnapshotCourse(slug: string): Course | null {
   return coursesBySlug.get(slug) ?? null;
 }

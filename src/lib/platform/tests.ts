@@ -27,7 +27,6 @@ export const BALANCE_TEST_API_SLUG = "balance-test";
 
 export const TESTS_HUB_ROUTE = "/tests";
 export const DOSHA_TEST_ROUTE = "/tests/dosha";
-export const LEGACY_DOSHA_TEST_ROUTE = "/dosha-test";
 export const BALANCE_TEST_ROUTE = "/tests/balance";
 
 export const platformTests: PlatformTestEntry[] = [
@@ -100,10 +99,7 @@ export const platformTests: PlatformTestEntry[] = [
   },
 ];
 
-export const platformTestBySlug = Object.fromEntries(platformTests.map((test) => [test.slug, test]));
-
 export const activePlatformTests = platformTests.filter((test) => test.status === "active");
-export const plannedPlatformTests = platformTests.filter((test) => test.status === "planned");
 
 /* HOW MANY TESTS THE HOME PANEL CAN HOLD (2026-09-28). The panel beside the
    intro video has to fit under the 16:9 player's height — 321px at the widest

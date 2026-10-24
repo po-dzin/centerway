@@ -48,10 +48,6 @@ export type Locale = "uk" | "en";
 
 const DEFAULT_LOCALE: Locale = "en";
 
-function first(v: string | string[] | undefined): string | undefined {
-  return Array.isArray(v) ? v[0] : v;
-}
-
 export type ProductFulfilment =
   /**
    * The platform serves it.
@@ -126,14 +122,4 @@ export function normalizeLocale(input: string | null | undefined): Locale | null
   if (s === "ua" || s === "uk" || s === "uk-ua" || s === "ua-ua") return "uk";
   if (s === "en" || s.startsWith("en-")) return "en";
   return null;
-}
-
-/**
- * Достаём order_ref из searchParams, если есть
- */
-export function resolveOrderRef(input: unknown): string | null {
-  if (!input || typeof input !== "object") return null;
-  const sp = input as SearchParams;
-  const raw = first(sp.order_ref) ?? first(sp.orderReference);
-  return typeof raw === "string" && raw.trim() ? raw.trim() : null;
 }

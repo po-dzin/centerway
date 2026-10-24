@@ -19,7 +19,6 @@
     "src/components/platform/layout/PlatformThemeControl.module.css": 6,
     "src/components/platform/PlatformResponsive.module.css": 5,
     "src/components/platform/PlatformBlocksOrientation.module.css": 4,
-    "src/components/platform/PlatformBlocksRoute.module.css": 4,
     "src/landing-static/irem/css/irem.theme.css": 3,
     "src/landing-static/short-b/css/short-b.theme.css": 3,
     "src/components/ToastProvider.module.css": 2,

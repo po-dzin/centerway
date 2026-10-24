@@ -26,15 +26,6 @@ import styles from "./PlatformTrail.module.css";
  * the wordmark had to be hidden below 561px to make room. A row that has to
  * drop a word to fit is a row carrying someone else's job.
  *
- * THE READER IS THE EXCEPTION, above 900px only (2026-08-29). Its bar carries a
- * mark and an avatar and nothing else, so the argument above does not describe
- * it: there is no row to overload, and the breadcrumb was spending a line of
- * the reading column under some 1600px of empty bar. Below 900px the bar has no
- * room to spare and the trail stays in the page, which is where the crowding
- * argument actually bites. See `src/components/lms/ReaderTrail.tsx` — and note
- * that this is a claim about ONE bar's contents, not a general licence: a
- * surface whose bar already carries controls keeps its trail in the page.
- *
  * A step may be a LINK, a BUTTON, or neither. The button form exists because
  * the builder cannot always navigate on click: an editor with unsaved work has
  * to ask first, and the destination is the caller's to know.

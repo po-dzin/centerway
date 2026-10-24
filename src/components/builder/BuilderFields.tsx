@@ -14,7 +14,6 @@
 
 import { useState, type KeyboardEvent } from "react";
 
-import { inlineToMarkup } from "@/lib/lms/inlineMarkup";
 import { PLACEHOLDER_MARKER, youtubeIdFrom, type InlineText } from "@/lms-core";
 import { BuilderImageField } from "./BuilderImageField";
 import { BuilderInlineEditor } from "./BuilderInlineEditor";
@@ -461,16 +460,4 @@ export function ChoiceSet<T extends string>({
       {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
     </div>
   );
-}
-
-/**
- * An inline value as one line of plain-ish text, for places that show a value
- * without editing it. Uses the markup dialect rather than flattening, so a
- * summary that carries a link still reads as one.
- */
-export function inlineOf(value: unknown): string {
-  if (value === undefined || value === null) return "";
-  if (typeof value === "string") return inlineToMarkup(value);
-  if (Array.isArray(value)) return inlineToMarkup(value as never);
-  return "";
 }

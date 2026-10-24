@@ -294,5 +294,3 @@ export function PlatformCatalogFilter({
     </div>
   );
 }
-
-export { styles as catalogFilterStyles };

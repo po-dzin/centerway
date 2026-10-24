@@ -22,7 +22,7 @@ import type { Db } from "./access/shared";
 import { AccessError, writeAudit } from "./access/shared";
 import { isFulfilmentStatus, type FulfilmentStatus } from "./fulfilmentStatus";
 
-export { FULFILMENT_STATUSES, isFulfilmentStatus, type FulfilmentStatus } from "./fulfilmentStatus";
+export { isFulfilmentStatus } from "./fulfilmentStatus";
 
 export async function setFulfilmentStatus(
   db: Db,

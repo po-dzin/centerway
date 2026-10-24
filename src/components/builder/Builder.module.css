@@ -1275,14 +1275,8 @@
 }
 
 /* Icon-only chrome: `chromeBare` drops the inline padding that exists for a
-   label, so the control comes out square instead of a wide empty button. */
-.stepAction {
-  composes: chromeBare from "../platform/PlatformButtons.module.css";
-  composes: square from "../platform/PlatformButtons.module.css";
-  position: relative;
-}
-
-/* Import is a secondary utility; creation remains the page's sole labelled
+   label, so the control comes out square instead of a wide empty button.
+   Import is a secondary utility; creation remains the page's sole labelled
    primary action. Both use the shared button and ink primitives. */
 .headImportAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";

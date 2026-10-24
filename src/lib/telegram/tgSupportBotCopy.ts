@@ -32,7 +32,6 @@ import { PLATFORM_ORIGIN, platformUrl, surfaceUrl } from "@/lib/surfaces/catalog
 // moved to the personal host and the bot's link would otherwise spend a 308
 // getting there.
 export const CABINET_URL = surfaceUrl(LEARNING_SHELF_HREF);
-export const PROGRAMS_URL = platformUrl("/programs");
 /* Re-exported so every existing caller keeps its import path; the literal
    itself lives in the leaf module, out of the cycle. */
 export { SUPPORT_BOT_URL };

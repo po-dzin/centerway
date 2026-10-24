@@ -311,47 +311,6 @@ export function BuilderShell({
 }
 
 /**
- * A round, unmistakably-pressable step control.
- *
- * An arrow ALONE reads as decoration, so the control carries its own material
- * and its own hit area — it has to look pressable before it is pressed. A
- * disabled end of the sequence is rendered rather than hidden: a control that
- * vanishes on the last lesson moves everything beside it, and the author loses
- * the target they were aiming at.
- *
- * A button, not a link, because the editor may have to ASK before it navigates
- * — an unsaved paragraph is not something a route change gets to discard
- * quietly. The destination lives in the caller, which is the only place that
- * knows whether it is safe to leave.
- */
-export function BuilderStep({
-  direction,
-  onNavigate,
-  label,
-}: {
-  direction: "prev" | "next";
-  /** Absent at either end of the sequence — the control renders disabled. */
-  onNavigate?: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      className={styles.stepAction}
-      type="button"
-      onClick={onNavigate}
-      disabled={!onNavigate}
-      aria-label={label}
-      title={label}
-      data-cw-ink-control
-    >
-      <InteractionInkIcon>
-        <Icon name={direction === "prev" ? "arrow-left" : "arrow-right"} size={20} />
-      </InteractionInkIcon>
-    </button>
-  );
-}
-
-/**
  * Sign-in, on the builder's own origin.
  *
  * Not a nicety: the builder is a separate origin and therefore a separate

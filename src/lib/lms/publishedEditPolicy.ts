@@ -9,7 +9,7 @@ import type { Course } from "@/lms-core";
  * shelf order. Title, summary, promise, schedule, access rules and every bit
  * of learning material are part of the released product.
  */
-export const IMMEDIATE_PUBLISHED_FIELDS = ["cover", "sortOrder"] as const;
+const IMMEDIATE_PUBLISHED_FIELDS = ["cover", "sortOrder"] as const;
 
 export type ImmediatePublishedPatch = {
   cover: Course["cover"] | null;
@@ -36,7 +36,7 @@ function canonical(value: unknown): string {
  * means this contract cannot accidentally be widened by a future UI field.
  */
 export function immediatePublishedPatch(live: Course, incoming: Course): ImmediatePublishedPatch | null {
-  const ignored = new Set(["cover", "sortOrder", "status", "version", "visibility"]);
+  const ignored = new Set<string>([...IMMEDIATE_PUBLISHED_FIELDS, "status", "version", "visibility"]);
   const keys = new Set([...Object.keys(live), ...Object.keys(incoming)]);
   for (const key of keys) {
     if (ignored.has(key)) continue;

@@ -388,10 +388,6 @@ export function normalizeHost(raw: string | null | undefined): string {
   return hostWithoutPort.trim().toLowerCase();
 }
 
-export function getProductSurfaceRegistry() {
-  return PRODUCT_SURFACE_REGISTRY;
-}
-
 export function getProductSurfaceEntry(productKey: ProductKey): ProductSurfaceEntry {
   return PRODUCT_SURFACE_REGISTRY[productKey];
 }

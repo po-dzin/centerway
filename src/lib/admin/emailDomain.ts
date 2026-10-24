@@ -40,9 +40,3 @@ export async function domainAcceptsMail(email: string): Promise<boolean> {
     return true;
   }
 }
-
-/** The addresses of a list whose domains take no mail, each domain asked once. */
-export async function undeliverable(emails: string[]): Promise<string[]> {
-  const verdicts = await Promise.all(emails.map(async (email) => [email, await domainAcceptsMail(email)] as const));
-  return verdicts.filter(([, ok]) => !ok).map(([email]) => email);
-}

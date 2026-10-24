@@ -106,13 +106,3 @@ export async function parseBody<S extends z.ZodType>(req: NextRequest, schema: S
   }
   return { ok: true, data: result.data };
 }
-
-/** Same for the query string, read as a flat object of the first value per key. */
-export function parseQuery<S extends z.ZodType>(req: NextRequest, schema: S): Parsed<z.infer<S>> {
-  const raw = Object.fromEntries(req.nextUrl.searchParams.entries());
-  const result = schema.safeParse(raw);
-  if (!result.success) {
-    return { ok: false, response: fail(400, "invalid_query", issuesText(result.error)) };
-  }
-  return { ok: true, data: result.data };
-}

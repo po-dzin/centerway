@@ -58,12 +58,6 @@ export function sphereName(id: SphereAxisId, lang: ProfileLang): string {
   return lang === "en" ? axis.nameEn : axis.name;
 }
 
-export function sphereShort(id: SphereAxisId, lang: ProfileLang): string {
-  const axis = SPHERE_AXES.find((item) => item.id === id);
-  if (!axis) return id;
-  return lang === "en" ? axis.shortEn : axis.short;
-}
-
 export function getSphereMapCopy(lang: ProfileLang): SphereMapCopy {
   if (lang === "en") {
     return {

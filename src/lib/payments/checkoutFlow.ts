@@ -1,7 +1,6 @@
 import { ProductCode } from "@/lib/products";
 import { asString } from "@/lib/strings";
 import { asJson } from "@/lib/db/types";
-import { CheckoutStartRequest, buildCheckoutEventPayload } from "@/lib/payments/checkout";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export type LeadRecord = {
@@ -16,21 +15,6 @@ export type LeadRecord = {
   fbclid?: string | null;
   campaign?: string | null;
 };
-
-export function buildLeadRecord(body: CheckoutStartRequest, product: ProductCode, orderRef: string): LeadRecord {
-  return {
-    order_ref: orderRef,
-    product_code: product,
-    source: "landing_checkout",
-    name: asString(body.name),
-    email: asString(body.email)?.toLowerCase() ?? null,
-    phone: asString(body.phone),
-    payload: buildCheckoutEventPayload(body),
-    fbp: asString(body.fbp),
-    fbclid: asString(body.fbclid),
-    campaign: asString(body.utm_campaign),
-  };
-}
 
 type SupabaseLike = ReturnType<typeof supabaseAdmin>;
 

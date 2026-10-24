@@ -30,10 +30,6 @@ function asCleanString(v: unknown): string | null {
   return s ? s : null;
 }
 
-export function checkoutLeadId(orderRef: string): string {
-  return `lead_${orderRef}`;
-}
-
 export function buildCheckoutEventPayload(body: CheckoutStartRequest) {
   const raw = {
     name: asCleanString(body.name),

@@ -171,7 +171,7 @@ const cases = [
     name: "lib rejects an import from components",
     file: "src/lib/__guard_probe.ts",
     expect: "lib must not import",
-    code: `import { PlatformStyles } from "@/components/platform/PlatformStyles";\nexport const a = PlatformStyles;\n`,
+    code: `import styles from "@/components/platform/PlatformSurfaceStyles";\nexport const a = styles;\n`,
   },
   {
     name: "components reject an import from app",

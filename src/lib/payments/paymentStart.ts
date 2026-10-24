@@ -92,27 +92,6 @@ type PaymentDeps = {
 };
 
 /**
- * `APP_BASE_URL` IS DELIBERATELY NOT HERE ANY MORE.
- *
- * The two addresses this module hands to WayForPay — `serviceUrl`, where the
- * approval must come back, and `returnUrl`, where the buyer must land — used to
- * be built from that variable. It named `centerway.vercel.app`, an alias that
- * stopped resolving at some point after 2026-08-22, and nothing noticed until a
- * customer paid 2900 UAH on 2026-09-10: the approval was delivered to a 404 for
- * four days, the order sat at `created`, no receipt, no Telegram, no access.
- *
- * The defect was not the wrong value. It was that our own origin — a constant
- * of this product, already declared in `surfaces/catalog` and already used by
- * the bot, the emails and the metadata — was ALSO a variable somebody had to
- * keep in sync by hand, in a dashboard, with no test standing over it. Env vars
- * are for secrets and for what genuinely differs per environment; where we live
- * is neither.
- */
-export function requiredPaymentEnv(gateway: PaymentGateway = activeGateway()) {
-  return { gateway: gateway.id, missing: gateway.missingEnv() };
-}
-
-/**
  * `course:my-course` → `course-my-course`.
  *
  * The order reference is echoed by WayForPay, read back out of URLs and used as

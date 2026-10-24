@@ -1,6 +1,5 @@
 import type { NextRequest } from "next/server";
 import { type HostBrand, hostBrandFromHost } from "@/lib/surfaces/hostBrand";
-import { getProductKeyByAlias } from "@/lib/surfaces/catalog";
 
 function normalizedHost(rawHost: string | null): string {
   if (!rawHost) return "";
@@ -70,26 +69,4 @@ export function resolveRequestBrand(req: NextRequest): HostBrand | null {
 
   // Referer acts only as a same-host fallback hint in ambiguous non-platform cases.
   return brandFromReferer(req.headers.get("referer"), requestHost, req.nextUrl.pathname.toLowerCase());
-}
-
-export function resolveRequestBrandFromPath(pathname: string): HostBrand | null {
-  const clean = pathname.trim().toLowerCase();
-  if (clean === "/programs/reboot" || clean.startsWith("/programs/reboot/")) return "reboot";
-  if (clean === "/reboot" || clean.startsWith("/reboot/")) return "reboot";
-  if (clean === "/programs/irem" || clean.startsWith("/programs/irem/")) return "irem";
-  if (clean === "/irem" || clean.startsWith("/irem/")) return "irem";
-  if (clean === "/programs/reset-day" || clean.startsWith("/programs/reset-day/")) return "reset-day";
-  // Legacy name of the same product — see the note in the URL-based resolver.
-  if (clean === "/programs/mini-detox" || clean.startsWith("/programs/mini-detox/")) return "reset-day";
-  if (clean === "/mini-detox" || clean.startsWith("/mini-detox/")) return "reset-day";
-  if (clean === "/programs/way21" || clean.startsWith("/programs/way21/")) return "way21";
-  if (clean === "/programs/detox" || clean.startsWith("/programs/detox/")) return "way21";
-  if (clean === "/products/herbs" || clean.startsWith("/products/herbs/")) return "herbs";
-  if (clean === "/detox" || clean.startsWith("/detox/")) return "way21";
-  if (clean === "/dosha" || clean.startsWith("/dosha/")) return "dosha";
-  if (clean === "/dosha-test" || clean.startsWith("/dosha-test/")) return "dosha";
-  if (clean === "/tests/dosha" || clean.startsWith("/tests/dosha/")) return "dosha";
-  if (clean === "/consult" || clean.startsWith("/consult/")) return "consult";
-  if (clean === "/herbs" || clean.startsWith("/herbs/")) return "herbs";
-  return getProductKeyByAlias(clean.replace(/^\//, ""));
 }

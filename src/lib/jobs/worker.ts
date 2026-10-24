@@ -197,10 +197,6 @@ const handlers: Record<string, JobHandler> = {
   },
 };
 
-export function registerJobHandler(type: string, handler: JobHandler) {
-  handlers[type] = handler;
-}
-
 // Ensure the execution doesn't block forever and locks jobs
 export async function processPendingJobs(limit = 10) {
   const db = adminClient();

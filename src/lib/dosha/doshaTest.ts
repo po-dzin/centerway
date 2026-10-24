@@ -609,8 +609,3 @@ export function scoreDoshaChoices(choices: Array<{ questionId: string; mappedDos
 export function doshaTagFromResult(result: DoshaResultType): string {
   return `dosha_${result}`;
 }
-
-export function asTestVersion(version: unknown): string {
-  if (typeof version === "string" && version.trim()) return version.trim();
-  return DOSHA_TEST_VERSION;
-}
