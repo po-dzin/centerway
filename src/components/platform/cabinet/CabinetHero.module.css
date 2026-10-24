@@ -471,7 +471,12 @@
   composes: chip from "../Chip.module.css";
 }
 
+/* The settings square stands beside a full-height button, so it takes the
+   button's height rather than the bare touch target (36px with a mouse): a
+   36px square next to a 48px button read as two sizes of one control. */
 .identityActions {
+  --ds-touch-target-min: var(--ds-button-min-height);
+
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;

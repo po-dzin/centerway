@@ -600,6 +600,9 @@
    result. Here it shares the course card's grid track: the wheel, the type,
    one way back into the test. */
 .shelfAside {
+  /* Compact like the course card and the map tile beside it, so the three
+     buttons of the row stand at one height. */
+  composes: compact from "../PlatformButtons.module.css";
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-xs);
@@ -2279,6 +2282,14 @@
   border-image: var(--cw-rule-fade-x);
 }
 
+/* Five tabs fit a 375px phone without scrolling at the smaller gap; the row
+   still scrolls on anything narrower. */
+@media (max-width: 560px) {
+  .tabs {
+    gap: var(--cw-space-sm);
+  }
+}
+
 .tab {
   flex: none;
   display: inline-flex;
@@ -2461,20 +2472,31 @@
    same inset and rhythm, a small label opens the map and the dosha, the
    course and the result speak in the editorial face at one size, and every
    foot (button or way on) sits on the same line. */
-.overview .shelfRow[data-cols="3"] {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+/* One column on a phone, three equal ones from a tablet up. Stated, not
+   `auto-fit`: at 1280px auto-fit made room for a fourth, empty track and the
+   three tiles stopped two thirds of the way across the column (visual pass
+   24.10). The doubled class outranks the photo-era placements above
+   (`grid-column: 3` for the dosha, row 2 for the link). */
+.overview .shelfRow.shelfRow[data-cols="3"] {
+  grid-template-columns: minmax(0, 1fr);
   justify-content: stretch;
   align-items: stretch;
   gap: var(--cw-space-md);
 }
 
-.overview .shelfRow[data-cols="3"] > * {
+@media (min-width: 640px) {
+  .overview .shelfRow.shelfRow[data-cols="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.overview .shelfRow.shelfRow[data-cols="3"] > :nth-child(n) {
   grid-column: auto;
   grid-row: auto;
 }
 
 /* The way to the whole library is the row's last line, under all three. */
-.overview .shelfRow[data-cols="3"] .glanceMore {
+.overview .shelfRow.shelfRow[data-cols="3"] > .glanceMore.glanceMore {
   grid-column: 1 / -1;
   order: 1;
 }

@@ -15,25 +15,30 @@
 .rhythm {
   composes: compact from "../PlatformButtons.module.css";
   display: grid;
-  /* One track that may shrink: the phase row scrolls inside it rather than
-     widening the page on a phone. */
+  /* One track that may shrink, so nothing inside widens the page on a phone.
+     No top margin: the tab body above already keeps the gap. */
   grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-lg);
-  margin-top: var(--cw-space-lg);
   min-width: 0;
 }
 
 /* ── Phase tabs / day types ───────────────────────── */
 
-/* One row; on a phone it scrolls sideways instead of wrapping onto a second
-   line, so the five phases still read as one sequence. */
+/* THE ROW WRAPS, EVERYWHERE (visual pass 24.10). Scrolling sideways cut the
+   last phase or day type at the screen's edge, which reads as a bug, not as
+   «there is more». On a phone the dates step aside so the five phases take
+   two short lines. */
 .tabs {
-  composes: cw-scroll-none from global;
   display: flex;
+  flex-wrap: wrap;
   gap: var(--cw-space-xs);
-  overflow-x: auto;
-  overflow-y: hidden;
   padding-block: var(--cw-space-2xs);
+}
+
+@media (max-width: 560px) {
+  .phaseOption small {
+    display: none;
+  }
 }
 
 .phaseOption {
@@ -340,6 +345,15 @@
   fill: var(--cw-platform-muted);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-label-size);
+}
+
+/* The web is drawn smaller than its viewBox on a phone, and its labels with
+   it: at the label size they came out around 9px. Set larger in the drawing,
+   they read at the label size on the screen. */
+@media (max-width: 560px) {
+  .label {
+    font-size: var(--ds-type-body-size);
+  }
 }
 
 .labelValue {
@@ -722,6 +736,14 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cw-space-xs);
+}
+
+/* On a phone the lever's name takes its own line above its blocks; beside
+   them it left one block on the label's line and the rest under it. */
+@media (max-width: 560px) {
+  .libGroup > span {
+    flex-basis: 100%;
+  }
 }
 
 .libGroup > span {
