@@ -123,8 +123,10 @@
   justify-content: flex-start;
 }
 
+/* One word on one line (G 24.10: «никаких 2х строк в кнопках»). */
 .viewerUpload {
   composes: base onMedia from "../PlatformButtons.module.css";
+  white-space: nowrap;
 }
 
 /* The field is opened by the buttons above, never shown. */

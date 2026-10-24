@@ -7,9 +7,9 @@
  * so it lives here and takes plain pictures — whoever opens it says what they
  * are and what the dialog is called.
  *
- * The picture at its own proportions in one night-glass frame over the
- * blurred page: its name and the close on the frame's head, the arrows, the
- * counter and the caller's actions on its foot.
+ * The picture at its own proportions on the whole screen, its controls on two
+ * thin lines over it: its name and the close at the top, the arrows, the
+ * counter and the caller's actions at the bottom.
  *
  * A native `<dialog>` opened modal, so focus stays inside, Escape closes it and
  * the page behind does not scroll. Left and right arrows on the keyboard, and
@@ -19,7 +19,7 @@
  * ACTIONS RIDE THE SAME ISLAND ROW (2026-10-23). The profile opens this viewer
  * on its own face, and the one thing worth doing from there is replacing it —
  * «Завантажити», as the design's viewer shows. A caller hands its controls in
- * through `actions` and they stand on the frame's foot beside the arrows; the
+ * through `actions` and they stand on the bottom line beside the arrows; the
  * viewer stays one viewer. A single picture has no counter: «1 / 1» counts
  * nothing.
  */
@@ -110,65 +110,56 @@ export function PhotoViewer({
         if (from - to > SWIPE) go(1);
       }}
     >
-      {/* THE PLATFORM'S FRAME (G 23.10: «в общей платформенной рамке, а не
-          тупо вот так»). The picture used to fill a black screen edge to edge
-          with two loose islands on it — a browser's image view, not ours. It
-          now stands in one night-glass frame over the blurred page: what this
-          is and the way out on its head, the picture with the system's corner,
-          and every control on its foot. Pressing outside the frame closes. */}
-      <div className={styles.frame}>
-        <div className={styles.head}>
-          <span className={styles.title}>{label}</span>
-          <button
-            className={styles.close}
-            type="button"
-            aria-label={copy.close}
-            onClick={() => dialog.current?.close()}
-          >
-            <Icon name="close" size={20} />
-          </button>
-        </div>
-        <div className={styles.stage}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- each caller's own stored rendition */}
-          <img
-            className={styles.img}
-            src={photo.src}
-            width={photo.w || undefined}
-            height={photo.h || undefined}
-            alt={photo.alt}
-          />
-        </div>
-        {photos.length > 1 || actions ? (
-          <div className={styles.tools}>
-            {photos.length > 1 ? (
-              <>
-                <button
-                  className={styles.step}
-                  type="button"
-                  aria-label={copy.prev}
-                  disabled={index === 0}
-                  onClick={() => go(-1)}
-                >
-                  <Icon name="arrow-left" size={20} />
-                </button>
-                <p className={styles.count} aria-live="polite">
-                  {index + 1} / {photos.length}
-                </p>
-                <button
-                  className={styles.step}
-                  type="button"
-                  aria-label={copy.next}
-                  disabled={index === last}
-                  onClick={() => go(1)}
-                >
-                  <Icon name="arrow-right" size={20} />
-                </button>
-              </>
-            ) : null}
-            {actions ? <div className={styles.actions}>{actions}</div> : null}
-          </div>
-        ) : null}
+      {/* NOTHING BETWEEN YOU AND THE PICTURE (G 24.10: «слишком много
+          карточек в карточках… как это делают топ-софты»). A photos app does
+          not put the photo on a card on a panel: the picture takes the screen,
+          and its controls are two thin lines laid over it — what it is and the
+          way out at the top, turning and acting at the bottom — on the night
+          glass, each a single word or a glyph. The frame of 23.10 is gone. */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- each caller's own stored rendition */}
+      <img
+        className={styles.img}
+        src={photo.src}
+        width={photo.w || undefined}
+        height={photo.h || undefined}
+        alt={photo.alt}
+      />
+      <div className={styles.top}>
+        <span className={styles.title}>{label}</span>
+        <button className={styles.close} type="button" aria-label={copy.close} onClick={() => dialog.current?.close()}>
+          <Icon name="close" size={20} />
+        </button>
       </div>
+      {photos.length > 1 || actions ? (
+        <div className={styles.bottom}>
+          {photos.length > 1 ? (
+            <div className={styles.turn}>
+              <button
+                className={styles.step}
+                type="button"
+                aria-label={copy.prev}
+                disabled={index === 0}
+                onClick={() => go(-1)}
+              >
+                <Icon name="arrow-left" size={20} />
+              </button>
+              <p className={styles.count} aria-live="polite">
+                {index + 1} / {photos.length}
+              </p>
+              <button
+                className={styles.step}
+                type="button"
+                aria-label={copy.next}
+                disabled={index === last}
+                onClick={() => go(1)}
+              >
+                <Icon name="arrow-right" size={20} />
+              </button>
+            </div>
+          ) : null}
+          {actions ? <div className={styles.actions}>{actions}</div> : null}
+        </div>
+      ) : null}
     </dialog>
   );
 }

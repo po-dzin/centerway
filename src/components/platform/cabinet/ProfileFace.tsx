@@ -178,7 +178,7 @@ export function ProfileFace({
               {fileField}
               <button type="button" className={styles.viewerUpload} disabled={uploading} onClick={pick}>
                 <Icon name="photo" size={18} />
-                {uploading ? copy.uploading : copy.viewerUpload}
+                {uploading ? copy.viewerUploading : copy.viewerUpload}
               </button>
             </>
           }

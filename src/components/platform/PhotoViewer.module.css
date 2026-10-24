@@ -1,15 +1,14 @@
 /* The platform's full-screen photo viewer (PhotoViewer.tsx). Moved from the
    feed's module on 2026-10-21 when the viewer became shared.
 
-   ONE FRAME (G 2026-10-23). The page stays behind, veiled and blurred; the
-   picture stands in a night-glass frame — the material of the sheets and
-   menus over photographs (ProfileFace's sheet, the bar's islands) — with its
-   name and the close on the head and its controls on the foot. The picture
-   keeps its own proportions and takes the system's corner. */
+   THE PICTURE IS THE SCREEN (G 2026-10-24). No frame, no panel, no card: the
+   photo at its own proportions on the dark ground, and two thin lines of
+   controls over its edges — the name and the close at the top, turning and
+   the caller's actions at the bottom — on a soft ink fade so they read over
+   any picture. Every control is the night glass (`onMedia`), one word or one
+   glyph. */
 
 .viewer {
-  --viewer-gutter: max(var(--cw-space-md), env(safe-area-inset-top, 0px));
-
   position: fixed;
   inset: 0;
   display: grid;
@@ -21,12 +20,11 @@
   block-size: 100dvh;
   max-block-size: none;
   margin: 0;
-  padding: var(--viewer-gutter);
+  padding: 0;
   border: 0;
   outline: none;
   overflow: hidden;
-  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 72%, transparent);
-  backdrop-filter: var(--cw-mat-filter);
+  background: var(--cw-mat-scrim-ink);
   color: var(--cw-platform-accent-contrast);
 }
 
@@ -34,63 +32,50 @@
   background: transparent;
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .viewer {
-    backdrop-filter: none;
-    background: var(--cw-mat-scrim-ink);
-  }
-}
-
-.frame {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: var(--cw-space-sm);
-  box-sizing: border-box;
-  max-inline-size: min(100%, 72rem);
+.img {
+  display: block;
+  max-inline-size: 100%;
   max-block-size: 100%;
-  padding: var(--cw-space-sm);
-  border-radius: var(--cw-radius-xl);
-  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
-  background-image: var(--cw-mat-grain-image);
-  box-shadow: var(--cw-mat-shadow-deep);
+  inline-size: auto;
+  block-size: auto;
+  object-fit: contain;
 }
 
-.head {
+/* The two lines over the picture. The fade is what lets a light photo keep a
+   legible title without a plate behind the words. */
+.top,
+.bottom {
+  position: absolute;
+  inset-inline: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--cw-space-sm);
-  padding-inline-start: var(--cw-space-xs);
+  padding-inline: max(var(--cw-space-md), env(safe-area-inset-left, 0px))
+    max(var(--cw-space-md), env(safe-area-inset-right, 0px));
+}
+
+.top {
+  inset-block-start: 0;
+  justify-content: space-between;
+  padding-block: max(var(--cw-space-md), env(safe-area-inset-top, 0px)) var(--cw-space-xl);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--cw-mat-scrim-ink) 70%, transparent), transparent);
+}
+
+.bottom {
+  inset-block-end: 0;
+  justify-content: center;
+  padding-block: var(--cw-space-xl) max(var(--cw-space-md), env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, color-mix(in srgb, var(--cw-mat-scrim-ink) 70%, transparent), transparent);
 }
 
 .title {
   min-width: 0;
   overflow: hidden;
-  color: var(--cw-mat-inverse-text-muted);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
-  letter-spacing: 0.08em;
+  color: var(--cw-mat-inverse-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
-}
-
-.stage {
-  display: grid;
-  place-items: center;
-  min-block-size: 0;
-}
-
-/* The frame's chrome (head, foot, padding, gaps) is taken off the screen's
-   height, so a tall portrait is never cut and never scrolls. */
-.img {
-  display: block;
-  max-inline-size: 100%;
-  max-block-size: calc(100dvh - 2 * var(--viewer-gutter) - 8rem);
-  inline-size: auto;
-  block-size: auto;
-  border-radius: var(--cw-radius-lg);
-  object-fit: contain;
 }
 
 .close,
@@ -98,12 +83,14 @@
   composes: base onMedia square from "./PlatformButtons.module.css";
 }
 
-.tools {
+.close {
+  flex: none;
+}
+
+.turn {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: var(--cw-space-sm);
+  gap: var(--cw-space-xs);
 }
 
 .step:disabled {
@@ -112,13 +99,13 @@
 
 .count {
   margin: 0;
-  padding-inline: var(--cw-space-sm);
+  padding-inline: var(--cw-space-xs);
   font-size: var(--ds-type-body-sm-size);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-/* A caller's own controls (`actions`), after the arrows on the same foot. */
+/* A caller's own controls (`actions`), after the arrows on the same line. */
 .actions {
   display: flex;
   gap: var(--cw-space-sm);
