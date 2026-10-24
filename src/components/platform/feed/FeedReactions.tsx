@@ -27,7 +27,12 @@ import styles from "./Feed.module.css";
 
 export function Emoji({ id, className }: { id: string; className?: string }) {
   return (
-    <svg className={className ?? styles.emoji} viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+    <svg
+      className={`${styles.emojiGlyph} ${className ?? styles.emoji}`}
+      viewBox="0 0 48 48"
+      aria-hidden="true"
+      focusable="false"
+    >
       <use href={`${CW_EMOJI_SPRITE_URL}#cwe-${id}`} />
     </svg>
   );

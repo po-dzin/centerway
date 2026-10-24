@@ -995,6 +995,19 @@ a.face {
   }
 }
 
+/* ONE PICTURE IN BOTH THEMES (G 24.10: «эмоджи должны быть универсальные
+   для светлой и тёмной темы — так во всех соцсетях»). The drawings never
+   changed with the theme, but their outlines are a darker shade of each fill,
+   so on the night ground the line-only ones (the five yoga figures, wind,
+   «100», the branch) sank into it. Every glyph now carries the same thin
+   paper edge, the way a sticker does: on paper it disappears into the page,
+   on graphite it is what lets the line read. The colour is the set's own
+   paper (scripts/lib/emoji-glyphs.mjs → PALETTE.paper) and does not follow
+   the theme — that is the point. */
+.emojiGlyph {
+  filter: drop-shadow(0 0 0.6px #fff8ef) drop-shadow(0 0 0.6px #fff8ef);
+}
+
 .emoji {
   inline-size: 1.25rem;
   block-size: 1.25rem;
