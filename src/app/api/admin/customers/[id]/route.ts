@@ -210,6 +210,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     tag_history: tagHistory ?? [],
     enrollments,
     orders: orderRows.map((o) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- `meta` is dropped from the reply, not read
       const { meta: _meta, ...order } = o;
       return { ...order, product_title: orderProductLabel(o) };
     }),

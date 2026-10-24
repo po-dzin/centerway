@@ -295,6 +295,7 @@ export function PlatformAccountMenu({
        and the root of the current origin is the one destination that exists on
        all three. That is exactly what the lint rule steers away from, so it is
        told so here rather than obeyed. */
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- hard reload on sign-out, see above
     if (typeof window !== "undefined") window.location.assign("/");
   };
 
