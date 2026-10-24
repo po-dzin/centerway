@@ -2,7 +2,7 @@
 // Source: scripts/lib/emoji-glyphs.mjs
 
 // Cache key for the sprite URL — see spriteVersion() in scripts/icons-bake.mjs.
-export const CW_EMOJI_SPRITE_VERSION = "ba8ed422";
+export const CW_EMOJI_SPRITE_VERSION = "47d66521";
 
 export const CW_EMOJI_SPRITE_URL = `/cw/emoji/cw-emoji.svg?v=${CW_EMOJI_SPRITE_VERSION}`;
 
