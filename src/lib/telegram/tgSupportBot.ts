@@ -39,7 +39,7 @@ import { classifyDosha, type DoshaResultType } from "@/lib/dosha/doshaTest";
 import { buildDoshaResultHtml, RESULT_COPY } from "@/lib/dosha/doshaResultCopy";
 import { DOSHA_PRIMARY_EXIT, doshaExitHref } from "@/lib/dosha/doshaRouting";
 import { captureQuestion } from "@/lib/agent/questions/store";
-import { parseKbAsk } from "@/lib/agent/kb/answer";
+import { kbCopy, parseKbAsk } from "@/lib/agent/kb/answer";
 import { answerKbQuestion, isTeamChat, kbBotEnabled, sendKbReply } from "@/lib/agent/kb/server";
 import { loadKnowledgeIndex } from "@/lib/agent/knowledge/server";
 import { handleFeedCallback, handleFeedReply, isFeedCallback } from "@/lib/feed/telegram";
@@ -913,7 +913,15 @@ async function handleKbAsk(
   question: string,
 ): Promise<void> {
   await sendTelegramChatAction(chatId);
-  const { html } = await answerKbQuestion({ question, telegramUserId: user.id, index: await loadKnowledgeIndex() });
+  let html: string;
+  try {
+    ({ html } = await answerKbQuestion({ question, telegramUserId: user.id, index: await loadKnowledgeIndex() }));
+  } catch (error) {
+    // The webhook swallows a throw into a 200, so without this line a broken
+    // run, budget read or index looks exactly like a bot that never heard.
+    console.error("[kb] answer failed:", error instanceof Error ? error.message : error);
+    html = kbCopy.failed;
+  }
   await sendKbReply({ chatId, replyTo: message.message_id, threadId: message.message_thread_id, html });
 }
 
@@ -940,9 +948,12 @@ async function handleTextMessage(db: Supabase, message: TelegramMessage): Promis
     }
     // …and, in the work group only, for /ask or a mention: the knowledge-base
     // bot (src/lib/agent/kb/server.ts). Everywhere else it stays silent.
-    if (kbBotEnabled() && isTeamChat(chatId)) {
-      const question = parseKbAsk(text, supportBotUsername());
-      if (question !== null) await handleKbAsk(chatId, message, user, question);
+    const question = parseKbAsk(text, supportBotUsername());
+    if (question !== null) {
+      if (kbBotEnabled() && isTeamChat(chatId)) await handleKbAsk(chatId, message, user, question);
+      // Silent in the chat by design, but not in the log: "the bot ignores
+      // /ask" is otherwise indistinguishable from "this is not the work group".
+      else console.info("[kb] /ask ignored:", { chat: chatId, enabled: kbBotEnabled(), teamChat: isTeamChat(chatId) });
     }
     return;
   }

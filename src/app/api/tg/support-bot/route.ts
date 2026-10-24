@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
 
   try {
     await handleTgSupportBotUpdate(update);
-  } catch {
+  } catch (error) {
+    // Still a 200, so Telegram does not redeliver the update in a loop; the
+    // log is the only place a failure here is visible.
+    console.error("[tg] support bot update failed:", error instanceof Error ? error.message : error);
     return NextResponse.json({ ok: true, handled: false });
   }
 
