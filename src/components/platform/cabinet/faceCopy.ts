@@ -17,6 +17,8 @@ export type FaceCopy = {
   settings: string;
   viewerLabel: (name: string) => string;
   viewerUpload: string;
+  /** The viewer's button while uploading: one word, like its label. */
+  viewerUploading: string;
   uploading: string;
   /** After a successful upload. The author form names the author page; the learner form has none. */
   doneAuthor: string;
@@ -32,8 +34,9 @@ const COPY: Record<ProfileLang, FaceCopy> = {
     upload: "Завантажити фото",
     settings: "Кадрувати, ім'я, обкладинка",
     viewerLabel: (name) => `${name} · фото профілю`,
-    viewerUpload: "Завантажити",
+    viewerUpload: "Замінити",
     uploading: "Завантажуємо фото…",
+    viewerUploading: "Замінюємо…",
     doneAuthor: "Нове фото вже всюди: топбар, коментарі, сторінка автора, Стрічка, тести й програми.",
     doneLearner: "Нове фото вже всюди: топбар, коментарі, Стрічка, тести й програми.",
   },
@@ -45,8 +48,9 @@ const COPY: Record<ProfileLang, FaceCopy> = {
     upload: "Upload photo",
     settings: "Crop, name, cover",
     viewerLabel: (name) => `${name} · profile photo`,
-    viewerUpload: "Upload",
+    viewerUpload: "Replace",
     uploading: "Uploading the photo…",
+    viewerUploading: "Replacing…",
     doneAuthor:
       "Your new photo is everywhere now: the top bar, comments, your author page, the Feed, tests and programs.",
     doneLearner: "Your new photo is everywhere now: the top bar, comments, the Feed, tests and programs.",

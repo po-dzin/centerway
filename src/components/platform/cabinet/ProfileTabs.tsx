@@ -7,7 +7,8 @@
  * (G 23.10: the map lives inside the profile as a tab, not on a sheet of its
  * own): they switch in place under the same room, and the address follows —
  * `/profile`, `/profile/map`, `/profile/rhythm`, `/profile/courses` — so a link, a reload or
- * «back» lands on the same tab. The journal is its own place and stays a link.
+ * «back» lands on the same tab. The journal joined them on 24.10 (G: «журнал
+ * должен быть виден в табе профиля»); `/journal` stays for old links.
  * The current one carries the ink stroke (`InteractionInkLabel variant="tab"`,
  * selection family `ink`) and `aria-current`.
  */
@@ -17,18 +18,24 @@ import { useCallback, useEffect, useState, type MouseEvent } from "react";
 
 import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import type { ProfileLang } from "@/components/platform/profile/types";
-import { PROFILE_COURSES_HREF, PROFILE_HREF, PROFILE_RHYTHM_HREF, SPHERE_MAP_HREF } from "@/lib/platform/content";
+import {
+  PROFILE_COURSES_HREF,
+  PROFILE_HREF,
+  PROFILE_JOURNAL_HREF,
+  PROFILE_RHYTHM_HREF,
+  SPHERE_MAP_HREF,
+} from "@/lib/platform/content";
 
 import styles from "./Cabinet.module.css";
 
 /** The sections that render inside the profile itself. */
-export type ProfileTab = "overview" | "map" | "rhythm" | "courses";
+export type ProfileTab = "overview" | "map" | "rhythm" | "courses" | "journal";
 
-type Key = ProfileTab | "journal";
+type Key = ProfileTab;
 
 const LABELS: Record<ProfileLang, Record<Key, string>> = {
-  uk: { overview: "Огляд", map: "Карта", rhythm: "Ритм", courses: "Курси", journal: "Журнал" },
-  en: { overview: "Overview", map: "Map", rhythm: "Rhythm", courses: "Courses", journal: "Journal" },
+  uk: { overview: "Огляд", map: "Карта", rhythm: "Ритм", courses: "Програми", journal: "Журнал" },
+  en: { overview: "Overview", map: "Map", rhythm: "Rhythm", courses: "Programs", journal: "Journal" },
 };
 
 const ARIA: Record<ProfileLang, string> = { uk: "Розділи профілю", en: "Profile sections" };
@@ -38,6 +45,7 @@ const TAB_PATHS: Record<ProfileTab, string> = {
   map: SPHERE_MAP_HREF,
   rhythm: PROFILE_RHYTHM_HREF,
   courses: PROFILE_COURSES_HREF,
+  journal: PROFILE_JOURNAL_HREF,
 };
 
 function tabFromPath(pathname: string): ProfileTab {
@@ -45,6 +53,7 @@ function tabFromPath(pathname: string): ProfileTab {
   if (path.endsWith(SPHERE_MAP_HREF)) return "map";
   if (path.endsWith(PROFILE_RHYTHM_HREF)) return "rhythm";
   if (path.endsWith(PROFILE_COURSES_HREF)) return "courses";
+  if (path.endsWith(PROFILE_JOURNAL_HREF)) return "journal";
   return "overview";
 }
 
@@ -66,6 +75,15 @@ export function useProfileTab(initial: ProfileTab): [ProfileTab, (next: ProfileT
     setTabState(next);
     const path = TAB_PATHS[next];
     if (window.location.pathname !== path) window.history.pushState(null, "", path);
+    /* A reader who switched from below the tabs lands at the top of the new
+       tab, with the tabs under the bar — not wherever the old tab's length
+       left the scroll, and never back at the hero. */
+    window.requestAnimationFrame(() => {
+      const nav = document.querySelector<HTMLElement>("[data-cw-profile-tabs]");
+      if (!nav) return;
+      const margin = Number.parseFloat(getComputedStyle(nav).scrollMarginTop) || 0;
+      if (nav.getBoundingClientRect().top < margin) nav.scrollIntoView({ block: "start" });
+    });
   }, []);
 
   return [tab, setTab];
@@ -82,7 +100,7 @@ export function ProfileTabs({
   links: { map: string; rhythm: string; courses: string; journal: string };
   lang: ProfileLang;
   overviewHref?: string;
-  /** Switch an in-profile tab in place; the journal stays a link. */
+  /** Switch a tab in place (every tab, the journal included, since 24.10). */
   onSelect?: (tab: ProfileTab) => void;
 }) {
   const labels = LABELS[lang] ?? LABELS.uk;
@@ -94,14 +112,13 @@ export function ProfileTabs({
     { key: "journal", href: links.journal },
   ];
   return (
-    <nav className={styles.tabs} aria-label={ARIA[lang] ?? ARIA.uk}>
+    <nav className={styles.tabs} aria-label={ARIA[lang] ?? ARIA.uk} data-cw-profile-tabs="">
       {items.map(({ key, href }) => {
         const active = key === current;
-        const inPlace = onSelect && key !== "journal";
         const select = (event: MouseEvent<HTMLAnchorElement>) => {
-          if (!inPlace || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+          if (!onSelect || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
           event.preventDefault();
-          onSelect(key as ProfileTab);
+          onSelect(key);
         };
         return (
           <Link

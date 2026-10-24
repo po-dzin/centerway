@@ -147,6 +147,14 @@
    This is not the "white veil" the bake replaced. A veil is a colour drawn ON
    TOP of the picture — visible as its own layer, following the layout. A mask
    removes the picture instead, so there is nothing over it to see. */
+.plateClip {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .plate {
   position: absolute;
   inset: 0;
@@ -157,6 +165,8 @@
   /* Held on the BOTTOM edge, always: the frame is composed from the floor up,
      and a crop that trims it would put the shelf on a slice of wall. */
   object-position: center bottom;
+  /* The drift's zoom (CabinetHero → useRoomDrift) grows from the floor too. */
+  transform-origin: center bottom;
   /* Six stops, the same easing curve the bake used: the endpoints do the work
      and the middle of the band does very little, so the eye finds a gradient
      rather than a lit line travelling across the picture. */
@@ -445,7 +455,9 @@
   height: clamp(4.5rem, 10vw, 7rem);
 }
 
+/* No bar: on a phone the row scrolls sideways (below). */
 .chips {
+  composes: cw-scroll-none from global;
   display: flex;
   flex-wrap: wrap;
   gap: var(--cw-space-xs);
@@ -459,20 +471,99 @@
   composes: chip from "../Chip.module.css";
 }
 
+/* The settings square stands beside a full-height button, so it takes the
+   button's height rather than the bare touch target (36px with a mouse): a
+   36px square next to a 48px button read as two sizes of one control. */
 .identityActions {
+  --ds-touch-target-min: var(--ds-button-min-height);
+
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--cw-space-xs);
 }
 
+/* The identity holds one row, so the plate does not keep the stacked layout's
+   empty second row and its gap under the commands. */
+.hero[data-layout="identity"] .plateWrap {
+  grid-template-rows: auto;
+  row-gap: 0;
+}
+
+/* ── The identity on a phone (G 23.10: «стена из чипов», «сверху много
+   пустого места») ─────────────────────────────────────────────────────
+   Three lines, each one thing: the face beside the name; the facts as one
+   line of chips that scrolls sideways instead of stacking into a wall; the
+   person's own commands. The name's column used to hold the chips too, so at
+   375px each chip took its own line and the name was pushed up under the bar.
+   The plate is as tall as what stands in it, not two thirds of the screen. */
 @media (max-width: 560px) {
+  .hero[data-layout="identity"] .plateWrap {
+    min-height: clamp(20rem, 52svh, 28rem);
+    padding-block-end: var(--cw-space-lg);
+  }
+
+  /* The room on top, the person on paper: the picture is gone by the time the
+     name begins, so the name's ink never stands on the photograph. */
+  .hero[data-layout="identity"] .plate {
+    mask-image: linear-gradient(
+      to bottom,
+      rgb(0 0 0) 0%,
+      rgb(0 0 0 / 0.9) 28%,
+      rgb(0 0 0 / 0.45) 42%,
+      rgb(0 0 0 / 0.1) 52%,
+      transparent 58%
+    );
+  }
+
+  /* The brass orbit would stand right behind the name here. */
+  .hero[data-layout="identity"] .seamMark {
+    display: none;
+  }
+
   .hero[data-layout="identity"] .identityMain {
     grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "face name"
+      "chips chips"
+      "actions actions";
+    align-items: center;
+    row-gap: var(--cw-space-sm);
+  }
+
+  .hero[data-layout="identity"] .identityMain > :first-child {
+    grid-area: face;
+  }
+
+  .hero[data-layout="identity"] .identityText {
+    display: contents;
+  }
+
+  .hero[data-layout="identity"] .identityName {
+    grid-area: name;
+    font-size: var(--ds-type-card-title-size);
+  }
+
+  .hero[data-layout="identity"] .avatar {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  .hero[data-layout="identity"] .chips {
+    grid-area: chips;
+    flex-wrap: nowrap;
+    margin: 0 calc(var(--cw-page-gutter) * -1);
+    padding-inline: var(--cw-page-gutter);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .hero[data-layout="identity"] .chip {
+    flex: none;
   }
 
   .hero[data-layout="identity"] .identityActions {
-    grid-column: 1 / -1;
+    grid-area: actions;
     justify-content: flex-start;
   }
 }

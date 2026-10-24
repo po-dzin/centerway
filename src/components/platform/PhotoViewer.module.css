@@ -1,12 +1,22 @@
 /* The platform's full-screen photo viewer (PhotoViewer.tsx). Moved from the
-   feed's module on 2026-10-21 when the viewer became shared. */
+   feed's module on 2026-10-21 when the viewer became shared.
 
-/* Photo canvas has no boundary; floating commands use the shared night glass. */
+   THE PICTURE IS THE SCREEN (G 2026-10-24). No frame, no panel, no card: the
+   photo at its own proportions on the dark ground, and two thin lines of
+   controls over its edges — the name and the close at the top, turning and
+   the caller's actions at the bottom — on a soft ink fade so they read over
+   any picture. Every control is the night glass (`onMedia`), one word or one
+   glyph. */
+
 .viewer {
   position: fixed;
   inset: 0;
   display: grid;
+  /* One track that can shrink below the photo's own size, so a tall portrait
+     is fitted by object-fit instead of stretching the row past the screen. */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
+  box-sizing: border-box;
   inline-size: 100%;
   max-inline-size: none;
   block-size: 100%;
@@ -20,60 +30,88 @@
   background: var(--cw-mat-scrim-ink);
   color: var(--cw-platform-accent-contrast);
 }
+
 .viewer::backdrop {
   background: transparent;
 }
+
 .img {
   display: block;
-  inline-size: 100%;
-  block-size: 100%;
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  min-inline-size: 0;
   min-block-size: 0;
+  inline-size: auto;
+  block-size: auto;
   object-fit: contain;
 }
-.close,
-.step {
-  composes: base onMedia square from "./PlatformButtons.module.css";
-  border: 0;
-  border-radius: var(--cw-radius-pill);
-}
-.close {
+
+/* The two lines over the picture. The fade is what lets a light photo keep a
+   legible title without a plate behind the words. */
+.top,
+.bottom {
   position: absolute;
-  inset-block-start: max(var(--cw-space-md), env(safe-area-inset-top, 0px));
-  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right, 0px));
-}
-.tools {
-  position: absolute;
-  inset-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom, 0px));
-  inset-inline-start: 50%;
-  translate: -50% 0;
+  inset-inline: 0;
   display: flex;
   align-items: center;
   gap: var(--cw-space-sm);
+  padding-inline: max(var(--cw-space-md), env(safe-area-inset-left, 0px))
+    max(var(--cw-space-md), env(safe-area-inset-right, 0px));
 }
+
+.top {
+  inset-block-start: 0;
+  justify-content: space-between;
+  padding-block: max(var(--cw-space-md), env(safe-area-inset-top, 0px)) var(--cw-space-xl);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--cw-mat-scrim-ink) 70%, transparent), transparent);
+}
+
+.bottom {
+  inset-block-end: 0;
+  justify-content: center;
+  padding-block: var(--cw-space-xl) max(var(--cw-space-md), env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, color-mix(in srgb, var(--cw-mat-scrim-ink) 70%, transparent), transparent);
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--cw-mat-inverse-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close,
+.step {
+  composes: base onMedia square from "./PlatformButtons.module.css";
+}
+
+.close {
+  flex: none;
+}
+
+.turn {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
 .step:disabled {
   opacity: 0.35;
 }
-.prev {
-  order: 0;
-}
-.next {
-  order: 2;
-}
+
 .count {
-  composes: onMedia from "./PlatformButtons.module.css";
-  order: 1;
   margin: 0;
-  padding-inline: var(--cw-space-md);
-  border: 0;
-  border-radius: var(--cw-radius-pill);
+  padding-inline: var(--cw-space-xs);
   font-size: var(--ds-type-body-sm-size);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-/* A caller's own controls (`actions`), after the counter on the same row. */
+/* A caller's own controls (`actions`), after the arrows on the same line. */
 .actions {
-  order: 3;
   display: flex;
   gap: var(--cw-space-sm);
 }

@@ -11,23 +11,24 @@
  */
 
 import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
-import { SPHERE_AXIS_IDS } from "@/lib/profile/sphereMap";
+import { EMPTY_SPHERE_MAP, SPHERE_AXIS_IDS } from "@/lib/profile/sphereMap";
 import type { ProfileLang } from "@/components/platform/profile/types";
+import type { ProfileMapDoc } from "@/lib/profile/cycle";
 
 import { matte } from "./CourseCard";
 import { SphereRadar } from "./SphereRadar";
 import { getSphereMapCopy, sphereName } from "./sphereMapCopy";
-import { useSphereMap } from "./useSphereMap";
 import styles from "./SphereMap.module.css";
 
 export function SphereMapCard({
-  userId,
+  map,
   lang,
   href,
   tile = false,
   onOpen,
 }: {
-  userId: string | null;
+  /** The map as the profile read it (one read for the card and the tab). */
+  map: ProfileMapDoc | null;
   lang: ProfileLang;
   href: string;
   /**
@@ -40,15 +41,31 @@ export function SphereMapCard({
   onOpen?: () => void;
 }) {
   const copy = getSphereMapCopy(lang);
-  const { map } = useSphereMap(userId, copy.saveError);
   const rated = map ? SPHERE_AXIS_IDS.some((id) => map.spheres[id]?.now != null) : false;
 
   return (
-    <article className={tile ? styles.tile : styles.card} data-cw-tile={tile ? "map" : undefined} {...matte}>
-      {map && rated ? <SphereRadar map={map} title={copy.radarTitle} compact /> : null}
+    <article
+      className={tile ? styles.tile : styles.card}
+      data-cw-tile={tile ? "map" : undefined}
+      aria-label={tile ? copy.cardTitle : undefined}
+      {...matte}
+    >
+      {/* THE OVERVIEW'S ONE RECIPE (G 23.10, «в артефакте лучше»): every tile
+          opens with the same small label, the picture in the middle, the words
+          and the way on at the foot — not a display-size title in one tile and
+          none in the next. */}
+      {tile ? <p className={styles.cardLabel}>{copy.cardLabel}</p> : null}
+      {/* On the overview the web is drawn even before the first score: the
+          tile's picture is the map's shape, and an empty one says «not drawn
+          yet» better than a hole in the middle of the tile. */}
+      {map && rated ? (
+        <SphereRadar map={map} title={copy.radarTitle} compact />
+      ) : tile ? (
+        <SphereRadar map={map ?? EMPTY_SPHERE_MAP} title={copy.radarTitle} compact />
+      ) : null}
       <div className={styles.cardText}>
         {tile ? null : <p className={styles.cardLabel}>{copy.cardLabel}</p>}
-        <h2 className={styles.cardTitle}>{copy.cardTitle}</h2>
+        {tile ? null : <h2 className={styles.cardTitle}>{copy.cardTitle}</h2>}
         {map && rated ? (
           map.focus.length > 0 ? (
             <p className={styles.cardNote}>
@@ -58,20 +75,30 @@ export function SphereMapCard({
         ) : (
           <p className={styles.cardNote}>{copy.cardEmpty}</p>
         )}
-        <span
-          className={styles.cardOnward}
-          onClickCapture={
-            onOpen
-              ? (event) => {
-                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
-                  event.preventDefault();
-                  onOpen();
-                }
-              : undefined
-          }
-        >
-          <PlatformBlockLink href={href} label={rated ? copy.cardOpen : copy.cardStart} />
-        </span>
+        {tile ? (
+          /* A BUTTON, like the course's and the dosha's beside it (G 24.10:
+             «без нормальной кнопки перехода»). The ink link read as a caption
+             under the three buttons of the row. */
+          <a
+            className={styles.tileAction}
+            href={href}
+            onClick={
+              onOpen
+                ? (event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+                    event.preventDefault();
+                    onOpen();
+                  }
+                : undefined
+            }
+          >
+            {rated ? copy.cardOpen : copy.cardStart}
+          </a>
+        ) : (
+          <span className={styles.cardOnward}>
+            <PlatformBlockLink href={href} label={rated ? copy.cardOpen : copy.cardStart} />
+          </span>
+        )}
       </div>
     </article>
   );

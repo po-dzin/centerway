@@ -406,6 +406,7 @@ export function SphereCycleView({
                       max={10}
                       step={1}
                       value={current ?? 0}
+                      style={{ "--p": `${(current ?? 0) * 10}%` } as React.CSSProperties}
                       aria-label={`${name}, ${fieldLabel}`}
                       aria-valuetext={current === null ? copy.unset : String(current)}
                       onChange={(event) => setValue(id, Number(event.target.value))}

@@ -7,8 +7,9 @@
  * so it lives here and takes plain pictures — whoever opens it says what they
  * are and what the dialog is called.
  *
- * The picture at its own proportions on a dark ground, with arrows and the
- * counter on bottom glass islands.
+ * The picture at its own proportions on the whole screen, its controls on two
+ * thin lines over it: its name and the close at the top, the arrows, the
+ * counter and the caller's actions at the bottom.
  *
  * A native `<dialog>` opened modal, so focus stays inside, Escape closes it and
  * the page behind does not scroll. Left and right arrows on the keyboard, and
@@ -18,9 +19,9 @@
  * ACTIONS RIDE THE SAME ISLAND ROW (2026-10-23). The profile opens this viewer
  * on its own face, and the one thing worth doing from there is replacing it —
  * «Завантажити», as the design's viewer shows. A caller hands its controls in
- * through `actions` and they stand on the bottom glass beside the arrows; the
- * viewer stays one viewer. A single picture with actions drops the «1 / 1»
- * counter, which counts nothing there.
+ * through `actions` and they stand on the bottom line beside the arrows; the
+ * viewer stays one viewer. A single picture has no counter: «1 / 1» counts
+ * nothing.
  */
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -109,9 +110,12 @@ export function PhotoViewer({
         if (from - to > SWIPE) go(1);
       }}
     >
-      <button className={styles.close} type="button" aria-label={copy.close} onClick={() => dialog.current?.close()}>
-        <Icon name="close" size={20} />
-      </button>
+      {/* NOTHING BETWEEN YOU AND THE PICTURE (G 24.10: «слишком много
+          карточек в карточках… как это делают топ-софты»). A photos app does
+          not put the photo on a card on a panel: the picture takes the screen,
+          and its controls are two thin lines laid over it — what it is and the
+          way out at the top, turning and acting at the bottom — on the night
+          glass, each a single word or a glyph. The frame of 23.10 is gone. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- each caller's own stored rendition */}
       <img
         className={styles.img}
@@ -120,36 +124,42 @@ export function PhotoViewer({
         height={photo.h || undefined}
         alt={photo.alt}
       />
-      <div className={styles.tools}>
-        {photos.length > 1 ? (
-          <>
-            <button
-              className={`${styles.step} ${styles.prev}`}
-              type="button"
-              aria-label={copy.prev}
-              disabled={index === 0}
-              onClick={() => go(-1)}
-            >
-              <Icon name="arrow-left" size={20} />
-            </button>
-            <button
-              className={`${styles.step} ${styles.next}`}
-              type="button"
-              aria-label={copy.next}
-              disabled={index === last}
-              onClick={() => go(1)}
-            >
-              <Icon name="arrow-right" size={20} />
-            </button>
-          </>
-        ) : null}
-        {photos.length > 1 || !actions ? (
-          <p className={styles.count} aria-live="polite">
-            {index + 1} / {photos.length}
-          </p>
-        ) : null}
-        {actions ? <div className={styles.actions}>{actions}</div> : null}
+      <div className={styles.top}>
+        <span className={styles.title}>{label}</span>
+        <button className={styles.close} type="button" aria-label={copy.close} onClick={() => dialog.current?.close()}>
+          <Icon name="close" size={20} />
+        </button>
       </div>
+      {photos.length > 1 || actions ? (
+        <div className={styles.bottom}>
+          {photos.length > 1 ? (
+            <div className={styles.turn}>
+              <button
+                className={styles.step}
+                type="button"
+                aria-label={copy.prev}
+                disabled={index === 0}
+                onClick={() => go(-1)}
+              >
+                <Icon name="arrow-left" size={20} />
+              </button>
+              <p className={styles.count} aria-live="polite">
+                {index + 1} / {photos.length}
+              </p>
+              <button
+                className={styles.step}
+                type="button"
+                aria-label={copy.next}
+                disabled={index === last}
+                onClick={() => go(1)}
+              >
+                <Icon name="arrow-right" size={20} />
+              </button>
+            </div>
+          ) : null}
+          {actions ? <div className={styles.actions}>{actions}</div> : null}
+        </div>
+      ) : null}
     </dialog>
   );
 }

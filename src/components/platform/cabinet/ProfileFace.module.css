@@ -123,15 +123,10 @@
   justify-content: flex-start;
 }
 
-.sheetLink {
-  align-self: flex-start;
-  padding-block: var(--cw-space-2xs);
-  color: var(--cw-platform-accent-contrast);
-  text-decoration: none;
-}
-
+/* One word on one line (G 24.10: «никаких 2х строк в кнопках»). */
 .viewerUpload {
   composes: base onMedia from "../PlatformButtons.module.css";
+  white-space: nowrap;
 }
 
 /* The field is opened by the buttons above, never shown. */

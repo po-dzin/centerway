@@ -15,22 +15,30 @@
 .rhythm {
   composes: compact from "../PlatformButtons.module.css";
   display: grid;
+  /* One track that may shrink, so nothing inside widens the page on a phone.
+     No top margin: the tab body above already keeps the gap. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-lg);
-  margin-top: var(--cw-space-lg);
   min-width: 0;
 }
 
 /* ── Phase tabs / day types ───────────────────────── */
 
-/* One row; on a phone it scrolls sideways instead of wrapping onto a second
-   line, so the five phases still read as one sequence. */
+/* THE ROW WRAPS, EVERYWHERE (visual pass 24.10). Scrolling sideways cut the
+   last phase or day type at the screen's edge, which reads as a bug, not as
+   «there is more». On a phone the dates step aside so the five phases take
+   two short lines. */
 .tabs {
-  composes: cw-scroll-none from global;
   display: flex;
+  flex-wrap: wrap;
   gap: var(--cw-space-xs);
-  overflow-x: auto;
-  overflow-y: hidden;
   padding-block: var(--cw-space-2xs);
+}
+
+@media (max-width: 560px) {
+  .phaseOption small {
+    display: none;
+  }
 }
 
 .phaseOption {
@@ -45,11 +53,26 @@
   font-size: var(--ds-type-label-size);
 }
 
+/* THE CHOSEN ONE, said by the box itself (G 23.10: the dashed contour stood
+   off the button's edge and read as a focus ring; the day types had no mark
+   at all). A box marks itself with its own ground and edge: a gold edge
+   drawn twice as thick as the resting one, over a gold-washed ground.
+   Kept under the pointer too: hover must not repaint the chosen ground. */
 .phaseOption[aria-selected="true"],
-.pickOption[aria-pressed="true"],
-.dayOption[aria-pressed="true"] {
-  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
-  outline-offset: var(--cw-contour-offset);
+.phaseOption[aria-pressed="true"],
+.pickOption[aria-pressed="true"] {
+  border-color: var(--cw-platform-accent);
+  box-shadow: inset 0 0 0 1px var(--cw-platform-accent);
+  background-color: color-mix(in srgb, var(--cw-platform-accent) 30%, var(--cw-mat-surface));
+}
+
+@media (hover: hover) {
+  .phaseOption[aria-selected="true"]:hover:not(:disabled),
+  .phaseOption[aria-pressed="true"]:hover:not(:disabled),
+  .pickOption[aria-pressed="true"]:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--cw-platform-accent) 36%, var(--cw-mat-surface));
+    box-shadow: inset 0 0 0 1px var(--cw-platform-accent);
+  }
 }
 
 /* ── Map: rows beside the radar ───────────────────── */
@@ -58,6 +81,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-xl);
+}
+
+/* On one column the picture leads (G 24.10: «сама карта не сверху»): the web
+   first, the rows that change it under it. */
+@media (max-width: 899px) {
+  .grid > .radar {
+    order: -1;
+  }
 }
 
 @media (min-width: 900px) {
@@ -169,8 +200,10 @@
   font-weight: 600;
 }
 
+/* A sentence in data type (the totals, «1 з 2 у дні») may wrap on a phone. */
 .mono {
   color: var(--cw-platform-muted);
+  white-space: normal;
 }
 
 .hideControl {
@@ -189,9 +222,62 @@
   min-height: var(--ds-touch-target-min);
 }
 
+/* Drawn, not the browser's: the native track picked its own dark or light for
+   the unfilled part per hue, so two rows of one scale came out in two inks.
+   The meter recipe instead — the track, the sphere's hue up to the value
+   (`--p`, set by the row) — and a thumb in the same hue on the page's ground. */
 .slider input {
   width: 100%;
-  accent-color: var(--c);
+  height: var(--ds-touch-target-min);
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.slider input::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background: linear-gradient(to right, var(--c) 0 var(--p), var(--cw-mat-meter-track) var(--p) 100%);
+}
+
+.slider input::-moz-range-track {
+  height: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background: linear-gradient(to right, var(--c) 0 var(--p), var(--cw-mat-meter-track) var(--p) 100%);
+}
+
+.slider input::-webkit-slider-thumb {
+  width: 1.125rem;
+  height: 1.125rem;
+  /* Centred on the 0.25rem track: half the difference of the two heights. */
+  margin-top: calc((0.25rem - 1.125rem) / 2);
+  border: 2px solid var(--cw-platform-bg);
+  border-radius: var(--cw-radius-pill);
+  background: var(--c);
+  box-shadow: 0 0 0 1px var(--c);
+  appearance: none;
+}
+
+.slider input::-moz-range-thumb {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid var(--cw-platform-bg);
+  border-radius: var(--cw-radius-pill);
+  background: var(--c);
+  box-shadow: 0 0 0 1px var(--c);
+}
+
+.slider input:focus-visible {
+  outline: none;
+}
+
+.slider input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--cw-nav-marker);
+}
+
+.slider input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--cw-nav-marker);
 }
 
 .slider b {
@@ -259,6 +345,15 @@
   fill: var(--cw-platform-muted);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-label-size);
+}
+
+/* The web is drawn smaller than its viewBox on a phone, and its labels with
+   it: at the label size they came out around 9px. Set larger in the drawing,
+   they read at the label size on the screen. */
+@media (max-width: 560px) {
+  .label {
+    font-size: var(--ds-type-body-size);
+  }
 }
 
 .labelValue {
@@ -467,8 +562,18 @@
   font-family: var(--cw-font-data);
 }
 
+/* A marked day is the sphere's own: its hue as the ground and the edge. */
 .dayOption[aria-pressed="true"] {
-  background-color: color-mix(in srgb, var(--c) 28%, var(--cw-mat-surface-sunk));
+  border-color: var(--c);
+  box-shadow: inset 0 0 0 1px var(--c);
+  background-color: color-mix(in srgb, var(--c) 34%, var(--cw-mat-surface));
+}
+
+@media (hover: hover) {
+  .dayOption[aria-pressed="true"]:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--c) 40%, var(--cw-mat-surface));
+    box-shadow: inset 0 0 0 1px var(--c);
+  }
 }
 
 .foot {
@@ -513,8 +618,8 @@
 }
 
 .focusOn {
-  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
-  outline-offset: var(--cw-contour-offset);
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-accent) 12%, var(--cw-mat-surface));
 }
 
 .slots {
@@ -537,9 +642,12 @@
   cursor: pointer;
 }
 
+/* The slot that receives the next block: its edge in gold, drawn inside so it
+   never collides with the slot beside it. */
 .slot[data-active] {
-  outline: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
-  outline-offset: var(--cw-contour-offset);
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-accent) 8%, var(--cw-mat-surface));
 }
 
 .slot:focus-visible {
@@ -605,8 +713,9 @@
 /* A placed block: pressing it takes it out of the slot. Its lever's hue is
    its left edge. */
 .blockAction {
-  composes: base secondary row from "../PlatformButtons.module.css";
+  composes: base secondary fill from "../PlatformButtons.module.css";
   justify-content: space-between;
+  text-align: start;
   border-inline-start: 3px solid var(--c);
 }
 
@@ -627,6 +736,14 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cw-space-xs);
+}
+
+/* On a phone the lever's name takes its own line above its blocks; beside
+   them it left one block on the label's line and the rest under it. */
+@media (max-width: 560px) {
+  .libGroup > span {
+    flex-basis: 100%;
+  }
 }
 
 .libGroup > span {

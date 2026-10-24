@@ -18,22 +18,23 @@ import { RhythmView } from "./RhythmView";
 import { SphereCycleView } from "./SphereCycleView";
 import { getCycleCopy } from "./cycleCopy";
 import { getSphereMapCopy } from "./sphereMapCopy";
-import { useSphereMap } from "./useSphereMap";
+import type { SphereMapState } from "./useSphereMap";
 import styles from "./SphereMap.module.css";
 
 export function ProfileMapTab({
-  userId,
+  state,
   lang,
   view = "map",
   onView,
 }: {
-  userId: string | null;
+  /** The map as the profile read it on arrival (CabinetClient), so the tab opens on data, not on a loader. */
+  state: SphereMapState;
   lang: ProfileLang;
   view?: "map" | "rhythm";
   onView?: (view: "map" | "rhythm") => void;
 }) {
   const copy = useMemo(() => getSphereMapCopy(lang), [lang]);
-  const { map, failed, retry, setScore, setNote, setCycle, setRhythm, edit } = useSphereMap(userId, copy.saveError);
+  const { map, failed, retry, setScore, setNote, setCycle, setRhythm, edit } = state;
 
   if (!failed && map === null) {
     return <PlatformLoadingState label={copy.label} title={copy.loadingTitle} detail={copy.loadingLead} />;
