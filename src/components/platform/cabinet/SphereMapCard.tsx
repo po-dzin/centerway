@@ -13,21 +13,22 @@
 import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { EMPTY_SPHERE_MAP, SPHERE_AXIS_IDS } from "@/lib/profile/sphereMap";
 import type { ProfileLang } from "@/components/platform/profile/types";
+import type { ProfileMapDoc } from "@/lib/profile/cycle";
 
 import { matte } from "./CourseCard";
 import { SphereRadar } from "./SphereRadar";
 import { getSphereMapCopy, sphereName } from "./sphereMapCopy";
-import { useSphereMap } from "./useSphereMap";
 import styles from "./SphereMap.module.css";
 
 export function SphereMapCard({
-  userId,
+  map,
   lang,
   href,
   tile = false,
   onOpen,
 }: {
-  userId: string | null;
+  /** The map as the profile read it (one read for the card and the tab). */
+  map: ProfileMapDoc | null;
   lang: ProfileLang;
   href: string;
   /**
@@ -40,7 +41,6 @@ export function SphereMapCard({
   onOpen?: () => void;
 }) {
   const copy = getSphereMapCopy(lang);
-  const { map } = useSphereMap(userId, copy.saveError);
   const rated = map ? SPHERE_AXIS_IDS.some((id) => map.spheres[id]?.now != null) : false;
 
   return (
@@ -75,20 +75,30 @@ export function SphereMapCard({
         ) : (
           <p className={styles.cardNote}>{copy.cardEmpty}</p>
         )}
-        <span
-          className={styles.cardOnward}
-          onClickCapture={
-            onOpen
-              ? (event) => {
-                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
-                  event.preventDefault();
-                  onOpen();
-                }
-              : undefined
-          }
-        >
-          <PlatformBlockLink href={href} label={rated ? copy.cardOpen : copy.cardStart} />
-        </span>
+        {tile ? (
+          /* A BUTTON, like the course's and the dosha's beside it (G 24.10:
+             «без нормальной кнопки перехода»). The ink link read as a caption
+             under the three buttons of the row. */
+          <a
+            className={styles.tileAction}
+            href={href}
+            onClick={
+              onOpen
+                ? (event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+                    event.preventDefault();
+                    onOpen();
+                  }
+                : undefined
+            }
+          >
+            {rated ? copy.cardOpen : copy.cardStart}
+          </a>
+        ) : (
+          <span className={styles.cardOnward}>
+            <PlatformBlockLink href={href} label={rated ? copy.cardOpen : copy.cardStart} />
+          </span>
+        )}
       </div>
     </article>
   );

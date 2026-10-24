@@ -42,6 +42,8 @@ export const SPHERE_MAP_HREF = "/profile/map";
 export const PROFILE_COURSES_HREF = "/profile/courses";
 /** The profile opened on «Мій ритм»: the day constructor fed by the map's bridge (G 23.10). */
 export const PROFILE_RHYTHM_HREF = "/profile/rhythm";
+/** The profile opened on its «Журнал» tab: the reader's own notes, under the same room (G 24.10). */
+export const PROFILE_JOURNAL_HREF = "/profile/journal";
 
 export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
 

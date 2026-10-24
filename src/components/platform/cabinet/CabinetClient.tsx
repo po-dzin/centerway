@@ -31,9 +31,9 @@ import { platformRoleLabel } from "@/lib/platform/identity";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import {
-  JOURNAL_HREF,
   LEARNING_SHELF_HREF,
   PROFILE_COURSES_HREF,
+  PROFILE_JOURNAL_HREF,
   PROFILE_RHYTHM_HREF,
   PROFILE_HREF,
   SPHERE_MAP_HREF,
@@ -46,6 +46,9 @@ import { getFaceCopy } from "./faceCopy";
 import { useAccountFace } from "./useAccountFace";
 import { useToast } from "@/components/ToastProvider";
 import { SphereMapCard } from "./SphereMapCard";
+import { getSphereMapCopy } from "./sphereMapCopy";
+import { useSphereMap } from "./useSphereMap";
+import { JournalBody, useJournal } from "./JournalClient";
 import { publishOwnFace } from "@/components/platform/ownFace";
 import { authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
 import { accountAvatar, accountAvatarCrop, accountAvatarStyle, providerAvatarAtSize } from "@/lib/auth/accountIdentity";
@@ -141,6 +144,13 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
   const authorProfile = useAuthorProfile(session);
   const face = useAccountFace(session, lang);
   const toast = useToast();
+  /* THE TABS' DATA IS READ ON ARRIVAL (G 24.10: «я вижу отдельно загрузку
+     табов — хорошо бы предзагружались»). The map (with its cycle and rhythm)
+     and the journal are read once, here, while the reader is still on the
+     overview; the card and the tabs share that one read and its saves, so
+     opening «Карта», «Ритм» or «Журнал» shows data, not a loader. */
+  const sphereMap = useSphereMap(session?.user?.id ?? null, getSphereMapCopy(lang).saveError);
+  const journal = useJournal(session?.user?.id ?? null);
 
   const purchases = useMemo(() => profile?.profile.purchases ?? [], [profile]);
 
@@ -172,7 +182,6 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
   const programsHref = href("/programs");
   const productsHref = href("/products");
   const shelfHref = href(LEARNING_SHELF_HREF);
-  const journalHref = href(JOURNAL_HREF);
   const sphereMapHref = href(SPHERE_MAP_HREF);
 
   const ownedCourses = useMemo(() => heldCourses(shelf ?? []), [shelf]);
@@ -333,7 +342,7 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
           map: sphereMapHref,
           rhythm: href(PROFILE_RHYTHM_HREF),
           courses: href(PROFILE_COURSES_HREF),
-          journal: journalHref,
+          journal: href(PROFILE_JOURNAL_HREF),
         }}
         overviewHref={href(PROFILE_HREF)}
         onSelect={setTab}
@@ -407,13 +416,7 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
                 the course is what to open, the map is where attention is going,
                 the dosha is who you are. It used to be a band below the room;
                 as a third tile it is the same glance as the other two. */}
-              <SphereMapCard
-                userId={session?.user?.id ?? null}
-                lang={lang}
-                href={sphereMapHref}
-                tile
-                onOpen={() => setTab("map")}
-              />
+              <SphereMapCard map={sphereMap.map} lang={lang} href={sphereMapHref} tile onOpen={() => setTab("map")} />
               {/* The dosha RESULT, not the tests catalogue. What the test is and
                 what else exists is the showcase's business — this tile holds
                 the answer that belongs to this person, at the size of a glance
@@ -490,9 +493,19 @@ export function CabinetClient({ initialTab = "overview" }: { initialTab?: Profil
           </div>
         ) : null}
 
+        {tab === "journal" ? (
+          /* «Журнал» (G 24.10): the reader's notes from every course, under the
+             same room, read on arrival with the rest of the profile. */
+          <div className={styles.shell}>
+            <div className={styles.section}>
+              <JournalBody state={journal} lang={lang} />
+            </div>
+          </div>
+        ) : null}
+
         {tab === "map" || tab === "rhythm" ? (
           <div className={styles.shell}>
-            <ProfileMapTab userId={session?.user?.id ?? null} lang={lang} view={tab} onView={setTab} />
+            <ProfileMapTab state={sphereMap} lang={lang} view={tab} onView={setTab} />
           </div>
         ) : tab === "overview" ? (
           <div className={styles.shell}>

@@ -78,6 +78,14 @@
   gap: var(--cw-space-xl);
 }
 
+/* On one column the picture leads (G 24.10: «сама карта не сверху»): the web
+   first, the rows that change it under it. */
+@media (max-width: 899px) {
+  .grid > .radar {
+    order: -1;
+  }
+}
+
 @media (min-width: 900px) {
   .grid {
     grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);

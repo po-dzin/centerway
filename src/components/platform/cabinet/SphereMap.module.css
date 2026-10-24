@@ -489,7 +489,10 @@
   gap: var(--cw-space-xs);
 }
 
-.tile .cardOnward {
+/* The tile's way on is a button at the foot, on the same line as the
+   buttons of the course and the dosha beside it. */
+.tileAction {
+  composes: base secondary fill from "../PlatformButtons.module.css";
   margin-top: auto;
 }
 
