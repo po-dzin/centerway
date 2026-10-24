@@ -42,6 +42,12 @@ describe("kb bot — what counts as a question for it", () => {
     );
   });
 
+  it("ignores other commands, even ones addressed to this bot", () => {
+    expect(parseKbAsk("/support@centerway_support_bot", "centerway_support_bot")).toBeNull();
+    expect(parseKbAsk("/help@centerway_support_bot", "centerway_support_bot")).toBeNull();
+    expect(parseKbAsk("/courses", "centerway_support_bot")).toBeNull();
+  });
+
   it("stays silent on ordinary group talk", () => {
     expect(parseKbAsk("колеги, хто сьогодні на зв'язку?", "centerway_support_bot")).toBeNull();
     expect(parseKbAsk("@centerway_support_bot_old привіт", "centerway_support_bot")).toBeNull();

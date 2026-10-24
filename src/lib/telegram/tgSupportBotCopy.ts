@@ -258,6 +258,15 @@ export const botProfile = {
     { command: "bug", description: "Повідомити про помилку" },
   ],
   /**
+   * The "/" menu in groups. Without its own scope a group shows the private
+   * menu above, whose commands the bot ignores there. Stream groups get
+   * /connect; the work group (`SUPPORT_CHAT_ID`) gets only /ask, the one place
+   * the knowledge-base bot answers, so its menu differs from every other
+   * group's (G, 24.10).
+   */
+  groupCommands: [{ command: "connect", description: "Підключити групу потоку" }],
+  workGroupCommands: [{ command: "ask", description: "Питання до бази знань" }],
+  /**
    * The blue button next to the input field: the command list, not a web_app
    * pointing at the cabinet.
    *
