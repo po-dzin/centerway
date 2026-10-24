@@ -197,6 +197,18 @@ a.face {
   color: inherit;
 }
 
+.editedMark {
+  display: inline-flex;
+  vertical-align: -0.1em;
+  margin-inline-start: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+}
+
+.editedMark svg {
+  inline-size: 0.8em;
+  block-size: 0.8em;
+}
+
 .tag {
   display: inline-flex;
   align-items: center;
@@ -1703,6 +1715,17 @@ a.commentFace {
   );
   pointer-events: none;
 }
+
+/* THE TAPE IS THE THEME'S OWN (G 24.10: «в темной теме делать темную ленту»).
+   On graphite the cream strip read as a light patch stuck over the card; the
+   night tape is the card's own dark with a breath of warmth, the grain kept,
+   so it is still tape and no longer a highlight. */
+:global([data-cw-theme="dark"]) .pinned::before {
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) 72%, var(--cw-sem-warmth) 28%);
+  opacity: 0.85;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 48%, transparent);
+}
+
 
 /* ─────────────── tabs on the author's page ─────────────── */
 

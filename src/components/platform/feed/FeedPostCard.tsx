@@ -417,8 +417,16 @@ export function FeedPostCard({
                 {relativeTime(when)}
               </time>
             </Link>
+            {/* EDITED IS A MARK ON THE TIME, NOT A WORD IN THE LIST (G 24.10).
+                «· Фокус · змінено» read as a topic called «змінено». The pencil
+                sits on the timestamp it qualifies, the way a chat marks an
+                edited message; the word stays for screen readers and hover. */}
+            {post.edited ? (
+              <span className={styles.editedMark} role="img" aria-label={feedCopy.edited} title={feedCopy.edited}>
+                <Icon name="edit" size={12} />
+              </span>
+            ) : null}
             {` · ${topics.map((topic) => FEED_TOPIC_LABELS[topic]).join(", ")}`}
-            {post.edited ? ` · ${feedCopy.edited}` : null}
           </p>
         </div>
         {onDeleted && post.canManage ? (

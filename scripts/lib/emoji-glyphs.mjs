@@ -730,7 +730,12 @@ function leaves(e) {
  * limb, two segments per limb so the joints read at 20px.
  */
 
-const LIMB = dark(C.terra, 0.62);
+/* ONE INK FOR BOTH THEMES (G 24.10: «эмоджи должны быть универсальные»).
+ * The limbs were terra darkened to 0.38 of itself, which read on cream and all
+ * but vanished on graphite. Emoji carry their own colour on every ground, the
+ * way a platform's set does, so the stroke is the palette's own terra: dark
+ * enough on the light card, light enough on the night one. */
+const LIMB = C.terra;
 
 const stick = (e, pts, w = 2.1) => e.line(pts, w, 0.18, LIMB);
 const ring = (e, x, y, r = 3.6) => e.shape(ell(x, y, r, r, 12), C.skin, { w: 1.3, amp: 0.12, off: [0.3, 0.3] });
