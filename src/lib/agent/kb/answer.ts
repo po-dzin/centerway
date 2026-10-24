@@ -61,8 +61,13 @@ export function parseKbAsk(text: string, botUsername: string): string | null {
     return (command[2] ?? "").trim();
   }
 
+  // Any other command is not a question. `/support@thisbot`, which Telegram's
+  // menu inserts in groups, contains the bot's @name and read as a mention
+  // until this line (G, 24.10).
+  if (trimmed.startsWith("/")) return null;
+
   if (!bot) return null;
-  const mention = new RegExp(`@${bot}\\b`, "gi");
+  const mention = new RegExp(`(?<![\\w/])@${bot}\\b`, "gi");
   if (!mention.test(trimmed)) return null;
   return trimmed.replace(mention, " ").replace(/\s+/g, " ").trim();
 }

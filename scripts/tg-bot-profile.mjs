@@ -9,7 +9,8 @@
  *   setMyName              — the display name
  *   setMyDescription       — the empty-chat screen, before /start
  *   setMyShortDescription  — the bot's profile page
- *   setMyCommands          — the "/" menu
+ *   setMyCommands          — the "/" menu: private chats, all groups, and the
+ *                            work group (SUPPORT_CHAT_ID) with /ask
  *   setChatMenuButton      — the blue button beside the input field
  *   setMyProfilePhoto      — the avatar
  *
@@ -83,6 +84,16 @@ const calls = [
   ["setMyDescription", { description: botProfile.description }],
   ["setMyShortDescription", { short_description: botProfile.shortDescription }],
   ["setMyCommands", { commands: botProfile.commands }],
+  ["setMyCommands", { commands: botProfile.groupCommands, scope: { type: "all_group_chats" } }],
+  // The work group only, so /ask is offered where it is answered.
+  ...(process.env.SUPPORT_CHAT_ID
+    ? [
+        [
+          "setMyCommands",
+          { commands: botProfile.workGroupCommands, scope: { type: "chat", chat_id: process.env.SUPPORT_CHAT_ID } },
+        ],
+      ]
+    : []),
   ["setChatMenuButton", { menu_button: botProfile.menuButton }],
 ];
 

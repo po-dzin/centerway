@@ -80,7 +80,7 @@ export function validateCorpus(docs: KnowledgeDoc[]): CorpusProblem[] {
     if (seen.has(doc.id)) problems.push({ id: doc.id, problem: "duplicate_id" });
     seen.add(doc.id);
 
-    if (!/^[a-z]+:[a-z0-9-]+$/.test(doc.id)) problems.push({ id: doc.id, problem: "malformed_id" });
+    if (!/^[a-z]+(:[a-z0-9-]+)+$/.test(doc.id)) problems.push({ id: doc.id, problem: "malformed_id" });
     if (doc.title.trim() === "") problems.push({ id: doc.id, problem: "empty_title" });
     // A document with almost no text cannot answer anything, but it CAN win a
     // search on a rare word and become the citation for a question it does not
